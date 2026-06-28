@@ -511,7 +511,9 @@ for col, stage in zip(columns, filtered_data.keys()):
             
             st.markdown(card_html, unsafe_allow_html=True)
             
-            # Hidden Streamlit buttons below for functionality
+            # Functional buttons (hidden with CSS, only for interaction)
+            st.markdown('<div style="display: none;">', unsafe_allow_html=True)
+            
             with st.container(border=False):
                 button_cols = st.columns([1, 1, 1, 1, 1])
                 
@@ -546,5 +548,7 @@ for col, stage in zip(columns, filtered_data.keys()):
                 if card_idx < len(filtered_data[stage]) - 1 and st.button("▼", key=f"down_{card['id']}"):
                     move_card_within_stage(card["id"], stage, "down")
                     st.rerun()
+            
+            st.markdown('</div>', unsafe_allow_html=True)
 
 st.caption(f"Total cards: {sum(len(c) for c in filtered_data.values())}")
