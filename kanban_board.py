@@ -343,7 +343,7 @@ with st.expander("➕ Add New Card Manually"):
     exec2_leverage = st.text_area("Profile & Leverage Angle", height=80, key="exec2_leverage")
     
     st.subheader("Executive 3 (MC Lead / Clinical Director)")
-    col1, col2 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
         exec3_name = st.text_input("Name", key="exec3_name")
     with col2:
