@@ -432,7 +432,8 @@ for col, stage in zip(columns, st.session_state.data.keys()):
                 if card.get('prioritization_track'):
                     st.caption(f"Track: {card['prioritization_track']}")
                 
-                # Action buttons - INSIDE the card container
+                # Action buttons - HIDDEN but functional
+                st.markdown('<div style="display: none;">', unsafe_allow_html=True)
                 st.markdown("---")
                 button_cols = st.columns(5)
                 
@@ -465,5 +466,6 @@ for col, stage in zip(columns, st.session_state.data.keys()):
                     if st.button("🗑️", key=f"del_{card['id']}", help="Delete", use_container_width=True):
                         delete_card(card["id"])
                         st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
 st.caption(f"Total cards: {sum(len(c) for c in st.session_state.data.values())}")
