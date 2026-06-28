@@ -406,8 +406,17 @@ for col, stage_name in zip(cols, st.session_state.data.keys()):
     with col:
         st.metric(stage_name, len(st.session_state.data[stage_name]))
 
-# Stage styling - unique colors for each column
-stage_styles = {
+# Track priority for sorting (higher number = higher priority = appears first)
+track_priority = {
+    "Quick Win": 1,
+    "Regional Powerhouse": 2,
+    "Standard": 3
+}
+
+def get_track_priority(card):
+    """Get priority value for a card based on its track"""
+    track = card.get('prioritization_track', 'Standard')
+    return track_priority.get(track, 99)  # Unknown tracks go to bottom
     "Tier 1 Discovery": {"bg": "#0d47a1", "emoji": "🔍", "accent": "#1976d2"},
     "First Call Scheduled": {"bg": "#e65100", "emoji": "📞", "accent": "#ff6f00"},
     "Pilot Discussion": {"bg": "#1b5e20", "emoji": "💬", "accent": "#2e7d32"},
@@ -443,7 +452,13 @@ for col, stage in zip(columns, st.session_state.data.keys()):
         """
         st.markdown(header_html, unsafe_allow_html=True)
         
-        for card_idx, card in enumerate(st.session_state.data[stage]):
+        # Sort cards by track priority (Quick Win first, then Regional Powerhouse, etc.)
+        sorted_cards = sorted(
+            enumerate(st.session_state.data[stage]),
+            key=lambda x: get_track_priority(x[1])
+        )
+        
+        for display_idx, (actual_idx, card) in enumerate(sorted_cards):
             
             with st.container(border=True):
                 # Card content
