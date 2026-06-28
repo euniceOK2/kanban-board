@@ -35,8 +35,8 @@ def get_first_n_words(text, n=5):
     words = str(text).split()
     return " ".join(words[:n]) + ("..." if len(words) > n else "")
 
-st.set_page_config(page_title="ED Sales Pipeline Kanban", layout="wide")
-st.title("🏥 ED Sales Pipeline Kanban")
+st.set_page_config(page_title="SNF Sales Pipeline", layout="wide")
+st.title("🏥 SNF Sales Pipeline")
 
 if "data" not in st.session_state:
     st.session_state.data = load_data()
@@ -130,7 +130,7 @@ if st.session_state.selected_card_id is not None:
         with col3:
             st.metric("Last Contact", card['last_contact'])
         
-        st.subheader("🏢 Location & Contact")
+        st.subheader("🏢 Location")
         loc_cols = st.columns(3)
         with loc_cols[0]:
             st.write(f"**City:** {card.get('city', 'N/A')}")
@@ -144,14 +144,20 @@ if st.session_state.selected_card_id is not None:
         if card.get('website'):
             st.write(f"**Website:** {card['website']}")
         
-        st.subheader("📊 Strategy")
+        # Section divider with dark styling
+        st.markdown("<div style='background-color: #2d3436; height: 2px; margin: 20px 0;'></div>", unsafe_allow_html=True)
+        
+        st.markdown("<div style='background-color: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 15px;'><h3 style='margin: 0; color: #fff;'>📊 Strategy</h3></div>", unsafe_allow_html=True)
         strat_cols = st.columns(2)
         with strat_cols[0]:
             st.write(f"**Track:** {card.get('prioritization_track', 'N/A')}")
         with strat_cols[1]:
             st.write(f"**Contract:** {card.get('contract_structure', 'N/A')}")
         
-        st.subheader("👥 Executive Contacts")
+        # Section divider with dark styling
+        st.markdown("<div style='background-color: #2d3436; height: 2px; margin: 20px 0;'></div>", unsafe_allow_html=True)
+        
+        st.markdown("<div style='background-color: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 15px;'><h3 style='margin: 0; color: #fff;'>👥 Executive Contacts</h3></div>", unsafe_allow_html=True)
         
         for i, (prefix, name_key, email_key, leverage_key) in enumerate([
             ("Executive 1 (ED)", "exec1_name", "exec1_email", "exec1_leverage"),
@@ -169,8 +175,11 @@ if st.session_state.selected_card_id is not None:
                         else:
                             st.write(f"**Leverage:** {leverage}")
         
+        # Section divider with dark styling
+        st.markdown("<div style='background-color: #2d3436; height: 2px; margin: 20px 0;'></div>", unsafe_allow_html=True)
+        
         if card.get('foundation_name'):
-            st.subheader("🏛️ Foundation")
+            st.markdown("<div style='background-color: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 15px;'><h3 style='margin: 0; color: #fff;'>🏛️ Foundation Information</h3></div>", unsafe_allow_html=True)
             with st.expander(f"Foundation: {card.get('foundation_name')}"):
                 st.write(f"**Leader:** {card.get('foundation_leader', 'N/A')}")
                 st.write(f"📧 {card.get('foundation_email', 'N/A')}")
@@ -183,11 +192,10 @@ if st.session_state.selected_card_id is not None:
                     else:
                         st.write(f"**Leverage:** {foundation_leverage}")
         
-        if card.get('next_step'):
-            st.subheader("📋 Next Step")
-            st.write(card['next_step'])
+        # Section divider with dark styling
+        st.markdown("<div style='background-color: #2d3436; height: 2px; margin: 20px 0;'></div>", unsafe_allow_html=True)
         
-        st.subheader("✏️ Update Next Step")
+        st.markdown("<div style='background-color: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 15px;'><h3 style='margin: 0; color: #fff;'>📋 Update/Next Step</h3></div>", unsafe_allow_html=True)
         new_next_step = st.text_area("Next Step Notes", value=card.get('next_step', ''), key="edit_next_step")
         if st.button("Save Next Step", key="save_next_step"):
             stage_name, _, _ = find_card(st.session_state.selected_card_id)
