@@ -485,13 +485,13 @@ for col, stage in zip(columns, st.session_state.data.keys()):
                         st.rerun()
                 
                 with button_cols[1]:
-                    if card_idx > 0:
+                    if display_idx > 0:
                         if st.button("⬆️", key=f"up_{card['id']}", help="Move up", use_container_width=True):
                             move_card_within_stage(card["id"], stage, "up")
                             st.rerun()
                 
                 with button_cols[2]:
-                    if card_idx < len(st.session_state.data[stage]) - 1:
+                    if display_idx < len(sorted_cards) - 1:
                         if st.button("⬇️", key=f"down_{card['id']}", help="Move down", use_container_width=True):
                             move_card_within_stage(card["id"], stage, "down")
                             st.rerun()
