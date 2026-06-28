@@ -452,39 +452,22 @@ for col, stage in zip(columns, filtered_data.keys()):
         """, unsafe_allow_html=True)
         
         for card_idx, card in enumerate(filtered_data[stage]):
-            # Card HTML with better styling - rounded corners, shadow, padding
+            # Card HTML - simplified
             card_html = f"""
-            <div style="
-                background-color: #1a1a1a;
-                border: 2px solid #555;
-                border-radius: 8px;
-                padding: 15px;
-                margin-bottom: 15px;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-            ">
-                <h4 style='margin: 0 0 12px 0; color: #fff; font-size: 16px;'>{card['community_name']}</h4>
-                <div style='font-size: 12px; color: #aaa; margin-bottom: 8px;'>
-                    {card['last_contact']}
-                </div>
-                <div style='font-size: 12px; color: #ffb347; margin-bottom: 12px;'>
-                    {card.get('prioritization_track', 'N/A')}
-                </div>
+            <div style="background-color: #1a1a1a; border: 2px solid #555; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">
+                <h4 style="margin: 0 0 12px 0; color: #fff; font-size: 16px;">{card['community_name']}</h4>
+                <div style="font-size: 12px; color: #aaa; margin-bottom: 8px;">{card['last_contact']}</div>
+                <div style="font-size: 12px; color: #ffb347; margin-bottom: 12px;">{card.get('prioritization_track', 'N/A')}</div>
             """
             
-            # First 10 words of next step - plain text only
+            # First 10 words of next step
             next_step_preview = get_first_n_words(card.get('next_step', ''), 10)
             if next_step_preview:
-                card_html += f"""
-                <div style='font-size: 11px; color: #bbb; padding-top: 8px; border-top: 1px solid #333;'>
-                </div>
-                <div style='font-size: 11px; color: #bbb; padding-top: 8px;'>
-                    {next_step_preview}
-                </div>
-                """
+                # Escape any problematic characters in the text
+                safe_text = next_step_preview.replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
+                card_html += f'<div style="font-size: 11px; color: #bbb; padding-top: 8px; border-top: 1px solid #333; margin-top: 8px;">{safe_text}</div>'
             
-            card_html += """
-            </div>
-            """
+            card_html += '</div>'
             
             st.markdown(card_html, unsafe_allow_html=True)
             
