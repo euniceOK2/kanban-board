@@ -33,8 +33,6 @@ st.title("🏥 ED Sales Pipeline Kanban")
 
 if "data" not in st.session_state:
     st.session_state.data = load_data()
-if "editing_card_id" not in st.session_state:
-    st.session_state.editing_card_id = None
 
 def find_card(card_id):
     for stage, cards in st.session_state.data.items():
@@ -60,53 +58,53 @@ def delete_card(card_id):
         st.session_state.data[stage].pop(idx)
         save_data(st.session_state.data)
 
-def add_card(stage, community_name, ed_name, ed_email, ed_phone, next_followup, tier, notes=""):
+def add_card(stage, community_name, ed_name, ed_email, tier, next_step, 
+             prioritization_track="", contract_structure="",
+             street_address="", city="", state="", phone="", website="",
+             exec2_name="", exec2_email="", exec2_leverage="",
+             exec3_name="", exec3_email="", exec3_leverage="",
+             foundation_name="", foundation_leader="", foundation_email="", foundation_leverage=""):
+    
     new_card = {
         "id": get_next_id(st.session_state.data),
         "community_name": community_name,
+        "stage": stage,
+        "tier": tier,
+        "last_contact": datetime.now().strftime("%Y-%m-%d"),
+        "next_step": next_step,
+        "prioritization_track": prioritization_track,
+        "contract_structure": contract_structure,
         "ed_name": ed_name,
         "ed_email": ed_email,
-        "ed_phone": ed_phone,
-        "last_contact": datetime.now().strftime("%Y-%m-%d"),
-        "next_followup": next_followup,
-        "tier": tier,
-        "notes": notes
+        "street_address": street_address,
+        "city": city,
+        "state": state,
+        "phone": phone,
+        "website": website,
+        "exec2_name": exec2_name,
+        "exec2_email": exec2_email,
+        "exec2_leverage": exec2_leverage,
+        "exec3_name": exec3_name,
+        "exec3_email": exec3_email,
+        "exec3_leverage": exec3_leverage,
+        "foundation_name": foundation_name,
+        "foundation_leader": foundation_leader,
+        "foundation_email": foundation_email,
+        "foundation_leverage": foundation_leverage
     }
     st.session_state.data[stage].append(new_card)
     save_data(st.session_state.data)
 
-# ============================================================================
-# FILE UPLOAD SECTION
-# ============================================================================
-
 st.subheader("📤 Bulk Import Cards from CSV")
 
 with st.expander("Instructions & Example"):
-    st.write("Upload a CSV file with the following columns:")
-    st.code("stage,community_name,ed_name,ed_email,ed_phone,next_followup,tier,notes")
-    
-    st.write("**Column Details:**")
-    st.write("- **stage**: Must be one of: Tier 1 Discovery, First Call Scheduled, Pilot Discussion, Pilot Agreement, Deployment, Results")
-    st.write("- **community_name**: Senior living community name (required)")
-    st.write("- **ed_name**: Executive Director name (required)")
-    st.write("- **ed_email**: Email address")
-    st.write("- **ed_phone**: Phone number")
-    st.write("- **next_followup**: Date in YYYY-MM-DD format (e.g., 2026-07-15)")
-    st.write("- **tier**: 1, 2, or 3")
-    st.write("- **notes**: Any additional notes (optional)")
-    
-    st.write("**Example CSV:**")
-    example_csv = """stage,community_name,ed_name,ed_email,ed_phone,next_followup,tier,notes
-Tier 1 Discovery,Sunrise Senior Living,Jane Smith,jane@sunrise.com,555-0101,2026-07-10,1,Initial contact made
-First Call Scheduled,Brookdale Homes,Mike Johnson,mike@brookdale.com,555-0102,2026-07-15,2,Meeting confirmed
-Pilot Discussion,Sunrise Assisted Living,Sarah Lee,sarah@sunrise-al.com,555-0103,2026-07-20,1,Discussed pilot scope"""
-    st.code(example_csv, language="csv")
+    st.write("Upload a CSV file with these columns:")
+    st.code("Stage,Prioritization Track,Primary Contract Structure,Community Name,Street Address,City,State,Phone Number,Website Address,Executive 1: CEO / ED Name,Executive 1: Direct Business Email,Executive 2: Health Admin / DON Name,Executive 2 Email,Executive 3: MC Lead / Clinical Director,Executive 3 Email,Foundation Entity Name,Foundation Leader Name & Title,Foundation Leader Direct Business Email")
 
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
 if uploaded_file is not None:
     try:
-        # Read the CSV file
         stream = StringIO(uploaded_file.getvalue().decode("utf8"), newline=None)
         csv_data = csv.DictReader(stream)
         
@@ -115,33 +113,59 @@ if uploaded_file is not None:
         cards_added = 0
         errors = []
         
-        for row_num, row in enumerate(csv_data, start=2):  # Start at 2 because row 1 is header
+        for row_num, row in enumerate(csv_data, start=2):
             try:
-                stage = row.get("stage", "").strip()
-                community_name = row.get("community_name", "").strip()
-                ed_name = row.get("ed_name", "").strip()
-                ed_email = row.get("ed_email", "").strip()
-                ed_phone = row.get("ed_phone", "").strip()
-                next_followup = row.get("next_followup", "").strip()
-                tier = int(row.get("tier", 1))
-                notes = row.get("notes", "").strip()
+                stage = row.get("Stage", "").strip()
+                community_name = row.get("Community Name", "").strip()
+                ed_name = row.get("Executive 1: CEO / ED Name", "").strip()
+                ed_email = row.get("Executive 1: Direct Business Email", "").strip()
+                prioritization = row.get("Prioritization Track", "").strip()
+                contract = row.get("Primary Contract Structure", "").strip()
+                street = row.get("Street Address", "").strip()
+                city = row.get("City", "").strip()
+                state = row.get("State", "").strip()
+                phone = row.get("Phone Number", "").strip()
+                website = row.get("Website Address", "").strip()
+                exec2_name = row.get("Executive 2: Health Admin / DON Name", "").strip()
+                exec2_email = row.get("Executive 2 Email", "").strip()
+                exec3_name = row.get("Executive 3: MC Lead / Clinical Director", "").strip()
+                exec3_email = row.get("Executive 3 Email", "").strip()
+                foundation_name = row.get("Foundation Entity Name", "").strip()
+                foundation_leader = row.get("Foundation Leader Name & Title", "").strip()
+                foundation_email = row.get("Foundation Leader Direct Business Email", "").strip()
                 
-                # Validation
                 if not stage or stage not in valid_stages:
                     errors.append(f"Row {row_num}: Invalid stage '{stage}'")
                     continue
                 if not community_name:
-                    errors.append(f"Row {row_num}: Missing community_name")
+                    errors.append(f"Row {row_num}: Missing Community Name")
                     continue
                 if not ed_name:
-                    errors.append(f"Row {row_num}: Missing ed_name")
-                    continue
-                if tier not in [1, 2, 3]:
-                    errors.append(f"Row {row_num}: Tier must be 1, 2, or 3")
+                    errors.append(f"Row {row_num}: Missing ED Name")
                     continue
                 
-                # Add the card
-                add_card(stage, community_name, ed_name, ed_email, ed_phone, next_followup, tier, notes)
+                add_card(
+                    stage=stage,
+                    community_name=community_name,
+                    ed_name=ed_name,
+                    ed_email=ed_email,
+                    tier=1,
+                    next_step="",
+                    prioritization_track=prioritization,
+                    contract_structure=contract,
+                    street_address=street,
+                    city=city,
+                    state=state,
+                    phone=phone,
+                    website=website,
+                    exec2_name=exec2_name,
+                    exec2_email=exec2_email,
+                    exec3_name=exec3_name,
+                    exec3_email=exec3_email,
+                    foundation_name=foundation_name,
+                    foundation_leader=foundation_leader,
+                    foundation_email=foundation_email
+                )
                 cards_added += 1
                 
             except Exception as e:
@@ -160,27 +184,46 @@ if uploaded_file is not None:
 
 st.markdown("---")
 
-# ============================================================================
-# MANUAL ENTRY SECTION
-# ============================================================================
-
 with st.expander("➕ Add New Card Manually"):
-    col1, col2 = st.columns(2)
-    with col1:
-        stage = st.selectbox("Stage", list(st.session_state.data.keys()), key="manual_stage")
-        community_name = st.text_input("Community Name", key="manual_community")
-        ed_name = st.text_input("ED Name", key="manual_ed_name")
-        ed_email = st.text_input("ED Email", key="manual_email")
-    with col2:
-        ed_phone = st.text_input("ED Phone", key="manual_phone")
-        next_followup = st.date_input("Next Follow-up Date", key="manual_date")
-        tier = st.selectbox("Tier", [1, 2, 3], key="manual_tier")
-        notes = st.text_area("Notes", key="manual_notes")
+    col1, col2, col3 = st.columns(3)
     
-    if st.button("Add Card", key="manual_add_btn"):
+    with col1:
+        stage = st.selectbox("Stage", list(st.session_state.data.keys()), key="stage_input")
+        community_name = st.text_input("Community Name", key="community_input")
+        ed_name = st.text_input("ED Name (Exec 1)", key="ed_name_input")
+        ed_email = st.text_input("ED Email", key="ed_email_input")
+    
+    with col2:
+        tier = st.selectbox("Tier", [1, 2, 3], key="tier_input")
+        prioritization = st.text_input("Prioritization Track", key="prioritization_input")
+        contract = st.text_input("Contract Structure", key="contract_input")
+        city = st.text_input("City", key="city_input")
+    
+    with col3:
+        state = st.text_input("State", key="state_input")
+        phone = st.text_input("Phone", key="phone_input")
+        website = st.text_input("Website", key="website_input")
+        next_step = st.text_area("Next Step", key="next_step_input", height=100)
+    
+    if st.button("Add Card", key="add_btn"):
         if community_name and ed_name:
-            add_card(stage, community_name, ed_name, ed_email, ed_phone, next_followup.strftime("%Y-%m-%d"), tier, notes)
-            st.success("Card added!")
+            add_card(
+                stage=stage,
+                community_name=community_name,
+                ed_name=ed_name,
+                ed_email=ed_email,
+                tier=tier,
+                next_step=next_step,
+                prioritization_track=prioritization,
+                contract_structure=contract,
+                city=city,
+                state=state,
+                phone=phone,
+                website=website
+            )
+            st.success("✅ Card added!")
+            
+            # Clear the form by rerunning
             st.rerun()
 
 st.markdown("---")
@@ -201,25 +244,57 @@ for col, stage in zip(columns, st.session_state.data.keys()):
             with st.container(border=True):
                 tier_colors = {1: "🔴", 2: "🟡", 3: "🟢"}
                 st.write(f"**{tier_colors[card['tier']]} {card['community_name']}**")
-                st.caption(card['ed_name'])
-                st.caption(card['ed_email'])
-                st.caption(card['ed_phone'])
-                st.caption(f"Next: {card['next_followup']}")
+                st.caption(f"ED: {card['ed_name']}")
+                st.caption(f"📧 {card['ed_email']}")
+                if card.get('prioritization_track'):
+                    st.caption(f"Track: {card['prioritization_track']}")
                 
-                if card.get("notes"):
-                    with st.expander("Notes"):
-                        st.write(card["notes"])
+                with st.expander("🏢 Company Details"):
+                    if card.get('street_address'):
+                        st.write(f"**Address:** {card.get('street_address', '')} {card.get('city', '')}, {card.get('state', '')}")
+                    if card.get('phone'):
+                        st.write(f"**Phone:** {card['phone']}")
+                    if card.get('website'):
+                        st.write(f"**Website:** {card['website']}")
+                
+                with st.expander("👥 Executive Contacts"):
+                    st.write(f"**Executive 1 (ED):** {card['ed_name']}")
+                    st.write(f"📧 {card['ed_email']}")
+                    
+                    if card.get('exec2_name'):
+                        st.write(f"**Executive 2:** {card['exec2_name']}")
+                        st.write(f"📧 {card['exec2_email']}")
+                        if card.get('exec2_leverage'):
+                            st.write(f"*Leverage:* {card['exec2_leverage']}")
+                    
+                    if card.get('exec3_name'):
+                        st.write(f"**Executive 3:** {card['exec3_name']}")
+                        st.write(f"📧 {card['exec3_email']}")
+                        if card.get('exec3_leverage'):
+                            st.write(f"*Leverage:* {card['exec3_leverage']}")
+                
+                if card.get('foundation_name'):
+                    with st.expander("🏛️ Foundation Info"):
+                        st.write(f"**Foundation:** {card['foundation_name']}")
+                        if card.get('foundation_leader'):
+                            st.write(f"**Leader:** {card['foundation_leader']}")
+                        if card.get('foundation_email'):
+                            st.write(f"📧 {card['foundation_email']}")
+                
+                if card.get('next_step'):
+                    with st.expander("📋 Next Step"):
+                        st.write(card['next_step'])
                 
                 col_left, col_right = st.columns(2)
                 with col_left:
-                    if st.button("Delete", key=f"del_{card['id']}"):
+                    if st.button("Delete", key=f"del_{card['id']}", use_container_width=True):
                         delete_card(card["id"])
                         st.rerun()
                 with col_right:
                     stages_list = list(st.session_state.data.keys())
                     idx = stages_list.index(stage)
                     if idx < 5:
-                        if st.button("→ Next", key=f"next_{card['id']}"):
+                        if st.button("→ Next", key=f"next_{card['id']}", use_container_width=True):
                             move_card(card["id"], stage, stages_list[idx + 1])
                             st.rerun()
 
