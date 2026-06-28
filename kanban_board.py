@@ -455,65 +455,56 @@ for col, stage in zip(columns, filtered_data.keys()):
             stages_list = list(filtered_data.keys())
             stage_idx = stages_list.index(stage)
             
-            # Card HTML display
-            card_html = f"""
-            <div style="background-color: #1a1a1a; border: 2px solid #555; border-radius: 8px; padding: 15px; margin-bottom: 0px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">
-                <h4 style="margin: 0 0 12px 0; color: #fff; font-size: 16px;">{card['community_name']}</h4>
-                <div style="font-size: 12px; color: #aaa; margin-bottom: 8px;">{card['last_contact']}</div>
-                <div style="font-size: 12px; color: #ffb347; margin-bottom: 12px;">{card.get('prioritization_track', 'N/A')}</div>
-            """
+            # Expander header shows: Company Name | Date | Track
+            expander_title = f"{card['community_name']} • {card['last_contact']} • {card.get('prioritization_track', 'N/A')}"
             
-            # First 10 words of next step
-            next_step_preview = get_first_n_words(card.get('next_step', ''), 10)
-            if next_step_preview:
-                safe_text = next_step_preview.replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
-                card_html += f'<div style="font-size: 11px; color: #bbb; padding-top: 8px; border-top: 1px solid #333; margin-top: 8px; margin-bottom: 12px;">{safe_text}</div>'
-            
-            card_html += '</div>'
-            
-            st.markdown(card_html, unsafe_allow_html=True)
-            
-            # Clickable buttons styled as text/arrows - positioned to match card layout
-            button_cols = st.columns([0.4, 1.2, 1.2, 0.4], gap="small")
-            
-            with button_cols[0]:
-                if stage_idx > 0:
-                    if st.button("←", key=f"prev_{card['id']}", use_container_width=True):
+            with st.expander(expander_title, expanded=False):
+                # Next step preview
+                next_step_preview = get_first_n_words(card.get('next_step', ''), 10)
+                if next_step_preview:
+                    st.write(f"**Next Step:** {next_step_preview}")
+                
+                st.divider()
+                
+                # Action buttons in a row
+                col1, col2, col3, col4, col5 = st.columns(5, gap="small")
+                
+                with col1:
+                    if stage_idx > 0 and st.button("← Prev", key=f"prev_{card['id']}", use_container_width=True):
                         move_card(card["id"], stage, stages_list[stage_idx - 1])
                         st.rerun()
-            
-            with button_cols[1]:
-                if st.button("View", key=f"view_{card['id']}", use_container_width=True):
-                    st.session_state.selected_card_id = card['id']
-                    st.rerun()
-            
-            with button_cols[2]:
-                if st.button("Delete", key=f"del_{card['id']}", use_container_width=True):
-                    delete_card(card["id"])
-                    st.rerun()
-            
-            with button_cols[3]:
-                if stage_idx < 5:
-                    if st.button("→", key=f"next_{card['id']}", use_container_width=True):
+                
+                with col2:
+                    if st.button("📋 View", key=f"view_{card['id']}", use_container_width=True):
+                        st.session_state.selected_card_id = card['id']
+                        st.rerun()
+                
+                with col3:
+                    if st.button("🗑️ Delete", key=f"del_{card['id']}", use_container_width=True):
+                        delete_card(card["id"])
+                        st.rerun()
+                
+                with col4:
+                    if stage_idx < 5 and st.button("Next →", key=f"next_{card['id']}", use_container_width=True):
                         move_card(card["id"], stage, stages_list[stage_idx + 1])
                         st.rerun()
-            
-            # Up/Down buttons row
-            move_cols = st.columns([1, 1, 1], gap="small")
-            
-            with move_cols[0]:
-                if card_idx > 0:
-                    if st.button("↑", key=f"up_{card['id']}", use_container_width=True):
+                
+                with col5:
+                    st.write("")
+                
+                st.divider()
+                
+                # Up/Down buttons
+                up_col, mid_col, down_col = st.columns(3, gap="small")
+                
+                with up_col:
+                    if card_idx > 0 and st.button("⬆ Up", key=f"up_{card['id']}", use_container_width=True):
                         move_card_within_stage(card["id"], stage, "up")
                         st.rerun()
-            
-            with move_cols[2]:
-                if card_idx < len(filtered_data[stage]) - 1:
-                    if st.button("↓", key=f"down_{card['id']}", use_container_width=True):
+                
+                with down_col:
+                    if card_idx < len(filtered_data[stage]) - 1 and st.button("⬇ Down", key=f"down_{card['id']}", use_container_width=True):
                         move_card_within_stage(card["id"], stage, "down")
                         st.rerun()
-            
-            # Spacing between cards
-            st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
 st.caption(f"Total cards: {sum(len(c) for c in filtered_data.values())}")
