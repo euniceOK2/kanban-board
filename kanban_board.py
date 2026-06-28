@@ -455,9 +455,9 @@ for col, stage in zip(columns, filtered_data.keys()):
             stages_list = list(filtered_data.keys())
             stage_idx = stages_list.index(stage)
             
-            # Card HTML display
+            # Card HTML display with positioned button overlays
             card_html = f"""
-            <div style="background-color: #1a1a1a; border: 2px solid #555; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">
+            <div style="background-color: #1a1a1a; border: 2px solid #555; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); position: relative;">
                 <h4 style="margin: 0 0 12px 0; color: #fff; font-size: 16px;">{card['community_name']}</h4>
                 <div style="font-size: 12px; color: #aaa; margin-bottom: 8px;">{card['last_contact']}</div>
                 <div style="font-size: 12px; color: #ffb347; margin-bottom: 12px;">{card.get('prioritization_track', 'N/A')}</div>
@@ -505,40 +505,43 @@ for col, stage in zip(columns, filtered_data.keys()):
             
             st.markdown(card_html, unsafe_allow_html=True)
             
-            # Clickable buttons positioned over card (in a tight row to match card layout)
-            card_action_cols = st.columns([0.5, 1, 1, 0.5])
+            # Clickable buttons - positioned to align with card (tight columns, minimal spacing)
+            button_cols = st.columns([0.4, 1.2, 1.2, 0.4], gap="small")
             
-            with card_action_cols[0]:
+            with button_cols[0]:
                 if stage_idx > 0 and st.button("◀", key=f"prev_{card['id']}", use_container_width=True):
                     move_card(card["id"], stage, stages_list[stage_idx - 1])
                     st.rerun()
             
-            with card_action_cols[1]:
+            with button_cols[1]:
                 if st.button("View", key=f"view_{card['id']}", use_container_width=True):
                     st.session_state.selected_card_id = card['id']
                     st.rerun()
             
-            with card_action_cols[2]:
+            with button_cols[2]:
                 if st.button("Delete", key=f"del_{card['id']}", use_container_width=True):
                     delete_card(card["id"])
                     st.rerun()
             
-            with card_action_cols[3]:
+            with button_cols[3]:
                 if stage_idx < 5 and st.button("▶", key=f"next_{card['id']}", use_container_width=True):
                     move_card(card["id"], stage, stages_list[stage_idx + 1])
                     st.rerun()
             
-            # Up/Down buttons row
-            card_move_cols = st.columns([1, 1, 1])
+            # Up/Down buttons row - minimal spacing
+            move_cols = st.columns([1, 1, 1], gap="small")
             
-            with card_move_cols[0]:
+            with move_cols[0]:
                 if card_idx > 0 and st.button("↑", key=f"up_{card['id']}", use_container_width=True):
                     move_card_within_stage(card["id"], stage, "up")
                     st.rerun()
             
-            with card_move_cols[2]:
+            with move_cols[2]:
                 if card_idx < len(filtered_data[stage]) - 1 and st.button("↓", key=f"down_{card['id']}", use_container_width=True):
                     move_card_within_stage(card["id"], stage, "down")
                     st.rerun()
+            
+            # Minimal spacing between cards
+            st.markdown("<div style='height: 2px;'></div>", unsafe_allow_html=True)
 
 st.caption(f"Total cards: {sum(len(c) for c in filtered_data.values())}")
