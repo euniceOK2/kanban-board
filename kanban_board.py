@@ -471,11 +471,13 @@ for col, stage in zip(columns, filtered_data.keys()):
                 </div>
             """
             
-            # First 10 words of next step - plain text, no HTML, no icon
+            # First 10 words of next step - plain text only
             next_step_preview = get_first_n_words(card.get('next_step', ''), 10)
             if next_step_preview:
                 card_html += f"""
                 <div style='font-size: 11px; color: #bbb; padding-top: 8px; border-top: 1px solid #333;'>
+                </div>
+                <div style='font-size: 11px; color: #bbb; padding-top: 8px;'>
                     {next_step_preview}
                 </div>
                 """
