@@ -455,43 +455,7 @@ for col, stage in zip(columns, filtered_data.keys()):
             stages_list = list(filtered_data.keys())
             stage_idx = stages_list.index(stage)
             
-            # Build button row HTML - just text and arrows, no button styling
-            button_html = '<div style="display: flex; gap: 16px; margin-top: 12px; justify-content: space-between; align-items: center; font-size: 13px; color: #aaa;">'
-            
-            # Left arrow
-            if stage_idx > 0:
-                button_html += '<span style="color: #fff; font-size: 16px;">←</span>'
-            else:
-                button_html += '<span style="color: #555; opacity: 0.3; font-size: 16px;">←</span>'
-            
-            # View, Delete, and controls
-            button_html += '<span>View</span>'
-            button_html += '<span>Delete</span>'
-            
-            # Right arrow
-            if stage_idx < 5:
-                button_html += '<span style="color: #fff; font-size: 16px;">→</span>'
-            else:
-                button_html += '<span style="color: #555; opacity: 0.3; font-size: 16px;">→</span>'
-            
-            button_html += '</div>'
-            
-            # Up/Down row
-            button_html += '<div style="display: flex; gap: 16px; margin-top: 8px; justify-content: center; font-size: 13px;">'
-            
-            if card_idx > 0:
-                button_html += '<span style="color: #fff; font-size: 16px; cursor: pointer;">↑</span>'
-            else:
-                button_html += '<span style="color: #555; opacity: 0.3; font-size: 16px;">↑</span>'
-            
-            if card_idx < len(filtered_data[stage]) - 1:
-                button_html += '<span style="color: #fff; font-size: 16px; cursor: pointer;">↓</span>'
-            else:
-                button_html += '<span style="color: #555; opacity: 0.3; font-size: 16px;">↓</span>'
-            
-            button_html += '</div>'
-            
-            # Card HTML with arrows and text INSIDE
+            # Card HTML display
             card_html = f"""
             <div style="background-color: #1a1a1a; border: 2px solid #555; border-radius: 8px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">
                 <h4 style="margin: 0 0 12px 0; color: #fff; font-size: 16px;">{card['community_name']}</h4>
@@ -505,50 +469,76 @@ for col, stage in zip(columns, filtered_data.keys()):
                 safe_text = next_step_preview.replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
                 card_html += f'<div style="font-size: 11px; color: #bbb; padding-top: 8px; border-top: 1px solid #333; margin-top: 8px; margin-bottom: 12px;">{safe_text}</div>'
             
-            # Add arrows and text inside the card
-            card_html += button_html
+            # Action row HTML
+            card_html += '<div style="display: flex; gap: 16px; margin-top: 12px; justify-content: space-between; align-items: center; font-size: 13px; color: #aaa;">'
+            
+            # Left arrow
+            if stage_idx > 0:
+                card_html += '<span style="color: #fff; font-size: 16px;">←</span>'
+            else:
+                card_html += '<span style="color: #555; opacity: 0.3; font-size: 16px;">←</span>'
+            
+            card_html += '<span>View</span><span>Delete</span>'
+            
+            # Right arrow
+            if stage_idx < 5:
+                card_html += '<span style="color: #fff; font-size: 16px;">→</span>'
+            else:
+                card_html += '<span style="color: #555; opacity: 0.3; font-size: 16px;">→</span>'
+            
             card_html += '</div>'
+            
+            # Up/Down row HTML
+            card_html += '<div style="display: flex; gap: 16px; margin-top: 8px; justify-content: center; font-size: 16px;">'
+            
+            if card_idx > 0:
+                card_html += '<span style="color: #fff;">↑</span>'
+            else:
+                card_html += '<span style="color: #555; opacity: 0.3;">↑</span>'
+            
+            if card_idx < len(filtered_data[stage]) - 1:
+                card_html += '<span style="color: #fff;">↓</span>'
+            else:
+                card_html += '<span style="color: #555; opacity: 0.3;">↓</span>'
+            
+            card_html += '</div></div>'
             
             st.markdown(card_html, unsafe_allow_html=True)
             
-            # Functional buttons (hidden with CSS, only for interaction)
-            st.markdown('<div style="display: none;">', unsafe_allow_html=True)
+            # Clickable buttons positioned over card (in a tight row to match card layout)
+            card_action_cols = st.columns([0.5, 1, 1, 0.5])
             
-            with st.container(border=False):
-                button_cols = st.columns([1, 1, 1, 1, 1])
-                
-                with button_cols[0]:
-                    if stage_idx > 0 and st.button("◀", key=f"prev_{card['id']}"):
-                        move_card(card["id"], stage, stages_list[stage_idx - 1])
-                        st.rerun()
-                
-                with button_cols[1]:
-                    if st.button("📋", key=f"view_{card['id']}"):
-                        st.session_state.selected_card_id = card['id']
-                        st.rerun()
-                
-                with button_cols[2]:
-                    if st.button("🗑️", key=f"del_{card['id']}"):
-                        delete_card(card["id"])
-                        st.rerun()
-                
-                with button_cols[3]:
-                    if stage_idx < 5 and st.button("▶", key=f"next_{card['id']}"):
-                        move_card(card["id"], stage, stages_list[stage_idx + 1])
-                        st.rerun()
+            with card_action_cols[0]:
+                if stage_idx > 0 and st.button("◀", key=f"prev_{card['id']}", use_container_width=True):
+                    move_card(card["id"], stage, stages_list[stage_idx - 1])
+                    st.rerun()
             
-            # Up/Down buttons
-            move_cols = st.columns([1, 1, 1])
-            with move_cols[0]:
-                if card_idx > 0 and st.button("▲", key=f"up_{card['id']}"):
+            with card_action_cols[1]:
+                if st.button("View", key=f"view_{card['id']}", use_container_width=True):
+                    st.session_state.selected_card_id = card['id']
+                    st.rerun()
+            
+            with card_action_cols[2]:
+                if st.button("Delete", key=f"del_{card['id']}", use_container_width=True):
+                    delete_card(card["id"])
+                    st.rerun()
+            
+            with card_action_cols[3]:
+                if stage_idx < 5 and st.button("▶", key=f"next_{card['id']}", use_container_width=True):
+                    move_card(card["id"], stage, stages_list[stage_idx + 1])
+                    st.rerun()
+            
+            # Up/Down buttons row
+            card_move_cols = st.columns([1, 1, 1])
+            
+            with card_move_cols[0]:
+                if card_idx > 0 and st.button("↑", key=f"up_{card['id']}", use_container_width=True):
                     move_card_within_stage(card["id"], stage, "up")
                     st.rerun()
             
-            with move_cols[2]:
-                if card_idx < len(filtered_data[stage]) - 1 and st.button("▼", key=f"down_{card['id']}"):
+            with card_move_cols[2]:
+                if card_idx < len(filtered_data[stage]) - 1 and st.button("↓", key=f"down_{card['id']}", use_container_width=True):
                     move_card_within_stage(card["id"], stage, "down")
                     st.rerun()
-            
-            st.markdown('</div>', unsafe_allow_html=True)
 
 st.caption(f"Total cards: {sum(len(c) for c in filtered_data.values())}")
