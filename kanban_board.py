@@ -130,7 +130,9 @@ if st.session_state.selected_card_id is not None:
         with col3:
             st.metric("Last Contact", card['last_contact'])
         
-        st.subheader("🏢 Location")
+        # LOCATION SECTION
+        st.markdown("<div style='background-color: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color: #2d2d2d; padding: 10px; border-radius: 5px; margin-bottom: 12px;'><h3 style='margin: 0; color: #fff;'>🏢 Location</h3></div>", unsafe_allow_html=True)
         loc_cols = st.columns(3)
         with loc_cols[0]:
             st.write(f"**City:** {card.get('city', 'N/A')}")
@@ -143,21 +145,21 @@ if st.session_state.selected_card_id is not None:
             st.write(f"**Address:** {card['street_address']}")
         if card.get('website'):
             st.write(f"**Website:** {card['website']}")
+        st.markdown("</div>", unsafe_allow_html=True)
         
-        # Section divider with dark styling
-        st.markdown("<div style='background-color: #2d3436; height: 2px; margin: 20px 0;'></div>", unsafe_allow_html=True)
-        
-        st.markdown("<div style='background-color: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 15px;'><h3 style='margin: 0; color: #fff;'>📊 Strategy</h3></div>", unsafe_allow_html=True)
+        # STRATEGY SECTION
+        st.markdown("<div style='background-color: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color: #2d2d2d; padding: 10px; border-radius: 5px; margin-bottom: 12px;'><h3 style='margin: 0; color: #fff;'>📊 Strategy</h3></div>", unsafe_allow_html=True)
         strat_cols = st.columns(2)
         with strat_cols[0]:
             st.write(f"**Track:** {card.get('prioritization_track', 'N/A')}")
         with strat_cols[1]:
             st.write(f"**Contract:** {card.get('contract_structure', 'N/A')}")
+        st.markdown("</div>", unsafe_allow_html=True)
         
-        # Section divider with dark styling
-        st.markdown("<div style='background-color: #2d3436; height: 2px; margin: 20px 0;'></div>", unsafe_allow_html=True)
-        
-        st.markdown("<div style='background-color: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 15px;'><h3 style='margin: 0; color: #fff;'>👥 Executive Contacts</h3></div>", unsafe_allow_html=True)
+        # EXECUTIVE CONTACTS SECTION
+        st.markdown("<div style='background-color: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color: #2d2d2d; padding: 10px; border-radius: 5px; margin-bottom: 12px;'><h3 style='margin: 0; color: #fff;'>👥 Executive Contacts</h3></div>", unsafe_allow_html=True)
         
         for i, (prefix, name_key, email_key, leverage_key) in enumerate([
             ("Executive 1 (ED)", "exec1_name", "exec1_email", "exec1_leverage"),
@@ -174,12 +176,12 @@ if st.session_state.selected_card_id is not None:
                             st.write(leverage)
                         else:
                             st.write(f"**Leverage:** {leverage}")
+        st.markdown("</div>", unsafe_allow_html=True)
         
-        # Section divider with dark styling
-        st.markdown("<div style='background-color: #2d3436; height: 2px; margin: 20px 0;'></div>", unsafe_allow_html=True)
-        
+        # FOUNDATION INFORMATION SECTION
         if card.get('foundation_name'):
-            st.markdown("<div style='background-color: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 15px;'><h3 style='margin: 0; color: #fff;'>🏛️ Foundation Information</h3></div>", unsafe_allow_html=True)
+            st.markdown("<div style='background-color: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px;'>", unsafe_allow_html=True)
+            st.markdown("<div style='background-color: #2d2d2d; padding: 10px; border-radius: 5px; margin-bottom: 12px;'><h3 style='margin: 0; color: #fff;'>🏛️ Foundation Information</h3></div>", unsafe_allow_html=True)
             with st.expander(f"Foundation: {card.get('foundation_name')}"):
                 st.write(f"**Leader:** {card.get('foundation_leader', 'N/A')}")
                 st.write(f"📧 {card.get('foundation_email', 'N/A')}")
@@ -191,11 +193,11 @@ if st.session_state.selected_card_id is not None:
                         st.write(foundation_leverage)
                     else:
                         st.write(f"**Leverage:** {foundation_leverage}")
+            st.markdown("</div>", unsafe_allow_html=True)
         
-        # Section divider with dark styling
-        st.markdown("<div style='background-color: #2d3436; height: 2px; margin: 20px 0;'></div>", unsafe_allow_html=True)
-        
-        st.markdown("<div style='background-color: #1a1a1a; padding: 10px; border-radius: 5px; margin-bottom: 15px;'><h3 style='margin: 0; color: #fff;'>📋 Update/Next Step</h3></div>", unsafe_allow_html=True)
+        # UPDATE/NEXT STEP SECTION
+        st.markdown("<div style='background-color: #1a1a1a; padding: 15px; border-radius: 8px; border: 1px solid #333; margin-bottom: 20px;'>", unsafe_allow_html=True)
+        st.markdown("<div style='background-color: #2d2d2d; padding: 10px; border-radius: 5px; margin-bottom: 12px;'><h3 style='margin: 0; color: #fff;'>📋 Update/Next Step</h3></div>", unsafe_allow_html=True)
         new_next_step = st.text_area("Next Step Notes", value=card.get('next_step', ''), key="edit_next_step")
         if st.button("Save Next Step", key="save_next_step"):
             stage_name, _, _ = find_card(st.session_state.selected_card_id)
@@ -209,6 +211,7 @@ if st.session_state.selected_card_id is not None:
                 save_data(st.session_state.data)
                 st.success("✅ Saved!")
                 st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
         
         st.markdown("---")
 
@@ -476,8 +479,8 @@ for col, stage in zip(columns, filtered_data.keys()):
                 </div>
             """
             
-            # First 5 words of next step
-            next_step_preview = get_first_n_words(card.get('next_step', ''), 5)
+            # First 10 words of next step
+            next_step_preview = get_first_n_words(card.get('next_step', ''), 10)
             if next_step_preview:
                 card_html += f"""
                 <div style='font-size: 11px; font-style: italic; color: #888; margin-bottom: 12px; padding-top: 8px; border-top: 1px solid #333;'>
