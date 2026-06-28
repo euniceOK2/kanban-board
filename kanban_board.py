@@ -91,12 +91,28 @@ if uploaded_file is not None:
         csv_data = csv.DictReader(stream)
         
         valid_stages = ["Tier 1 Discovery", "First Call Scheduled", "Pilot Discussion", "Pilot Agreement", "Deployment", "Results"]
+        
+        # Map abbreviated stage names to full names
+        stage_mapping = {
+            "Discovery": "Tier 1 Discovery",
+            "Tier 1 Discovery": "Tier 1 Discovery",
+            "First Call": "First Call Scheduled",
+            "First Call Scheduled": "First Call Scheduled",
+            "Pilot Discussion": "Pilot Discussion",
+            "Pilot Agreement": "Pilot Agreement",
+            "Deployment": "Deployment",
+            "Results": "Results"
+        }
+        
         cards_added = 0
         errors = []
         
         for row_num, row in enumerate(csv_data, start=2):
             try:
                 stage = row.get("Stage", "").strip()
+                # Map the stage name if it's abbreviated
+                stage = stage_mapping.get(stage, stage)
+                
                 community_name = row.get("Community Name", "").strip()
                 ed_name = row.get("Executive 1: CEO / ED Name", "").strip()
                 
