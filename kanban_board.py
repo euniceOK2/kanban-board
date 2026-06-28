@@ -516,34 +516,34 @@ for col, stage in zip(columns, filtered_data.keys()):
                 button_cols = st.columns([1, 1, 1, 1, 1])
                 
                 with button_cols[0]:
-                    if stage_idx > 0 and st.button("", key=f"prev_{card['id']}", label_visibility="collapsed"):
+                    if stage_idx > 0 and st.button("◀", key=f"prev_{card['id']}"):
                         move_card(card["id"], stage, stages_list[stage_idx - 1])
                         st.rerun()
                 
                 with button_cols[1]:
-                    if st.button("", key=f"view_{card['id']}", label_visibility="collapsed"):
+                    if st.button("📋", key=f"view_{card['id']}"):
                         st.session_state.selected_card_id = card['id']
                         st.rerun()
                 
                 with button_cols[2]:
-                    if st.button("", key=f"del_{card['id']}", label_visibility="collapsed"):
+                    if st.button("🗑️", key=f"del_{card['id']}"):
                         delete_card(card["id"])
                         st.rerun()
                 
                 with button_cols[3]:
-                    if stage_idx < 5 and st.button("", key=f"next_{card['id']}", label_visibility="collapsed"):
+                    if stage_idx < 5 and st.button("▶", key=f"next_{card['id']}"):
                         move_card(card["id"], stage, stages_list[stage_idx + 1])
                         st.rerun()
             
             # Up/Down buttons
             move_cols = st.columns([1, 1, 1])
             with move_cols[0]:
-                if card_idx > 0 and st.button("", key=f"up_{card['id']}", label_visibility="collapsed"):
+                if card_idx > 0 and st.button("▲", key=f"up_{card['id']}"):
                     move_card_within_stage(card["id"], stage, "up")
                     st.rerun()
             
             with move_cols[2]:
-                if card_idx < len(filtered_data[stage]) - 1 and st.button("", key=f"down_{card['id']}", label_visibility="collapsed"):
+                if card_idx < len(filtered_data[stage]) - 1 and st.button("▼", key=f"down_{card['id']}"):
                     move_card_within_stage(card["id"], stage, "down")
                     st.rerun()
 
