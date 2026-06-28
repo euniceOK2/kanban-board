@@ -406,6 +406,16 @@ for col, stage_name in zip(cols, st.session_state.data.keys()):
     with col:
         st.metric(stage_name, len(st.session_state.data[stage_name]))
 
+# Stage styling - unique colors for each column
+stage_styles = {
+    "Tier 1 Discovery": {"bg": "#0d47a1", "emoji": "🔍", "accent": "#1976d2"},
+    "First Call Scheduled": {"bg": "#e65100", "emoji": "📞", "accent": "#ff6f00"},
+    "Pilot Discussion": {"bg": "#1b5e20", "emoji": "💬", "accent": "#2e7d32"},
+    "Pilot Agreement": {"bg": "#880e4f", "emoji": "📋", "accent": "#c2185b"},
+    "Deployment": {"bg": "#4a148c", "emoji": "🚀", "accent": "#7b1fa2"},
+    "Results": {"bg": "#5d4037", "emoji": "✅", "accent": "#795548"}
+}
+
 st.markdown("---")
 
 # ============================================================================
@@ -415,7 +425,24 @@ st.markdown("---")
 columns = st.columns(6)
 for col, stage in zip(columns, st.session_state.data.keys()):
     with col:
-        st.subheader(stage)
+        # Styled stage header
+        style = stage_styles.get(stage, {})
+        bg_color = style.get("bg", "#333")
+        emoji = style.get("emoji", "")
+        
+        header_html = f"""
+        <div style="background: linear-gradient(135deg, {bg_color} 0%, {style.get('accent', bg_color)} 100%); 
+                    padding: 12px; border-radius: 8px 8px 0 0; margin-bottom: 12px; text-align: center;">
+            <h3 style="margin: 0; color: white; font-size: 16px;">
+                {emoji} {stage}
+            </h3>
+            <div style="color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 4px;">
+                {len(st.session_state.data[stage])} cards
+            </div>
+        </div>
+        """
+        st.markdown(header_html, unsafe_allow_html=True)
+        
         for card_idx, card in enumerate(st.session_state.data[stage]):
             
             with st.container(border=True):
