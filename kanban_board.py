@@ -35,27 +35,14 @@ def get_first_n_words(text, n=5):
     words = str(text).split()
     return " ".join(words[:n]) + ("..." if len(words) > n else "")
 
-st.set_page_config(page_title="SNF Sales Pipeline", layout="wide")
-st.title("🏥 SNF Sales Pipeline")
+st.set_page_config(page_title="ED Sales Pipeline Kanban", layout="wide")
+st.title("🏥 ED Sales Pipeline Kanban")
 
 if "data" not in st.session_state:
     st.session_state.data = load_data()
 
 if "selected_card_id" not in st.session_state:
     st.session_state.selected_card_id = None
-
-if "search_query" not in st.session_state:
-    st.session_state.search_query = ""
-
-# Stage colors
-stage_colors = {
-    "Tier 1 Discovery": "#1f77b4",
-    "First Call Scheduled": "#ff7f0e",
-    "Pilot Discussion": "#2ca02c",
-    "Pilot Agreement": "#d62728",
-    "Deployment": "#9467bd",
-    "Results": "#8c564b"
-}
 
 def find_card(card_id):
     for stage, cards in st.session_state.data.items():
@@ -76,6 +63,7 @@ def move_card(card_id, from_stage, to_stage):
         save_data(st.session_state.data)
 
 def move_card_within_stage(card_id, stage, direction):
+    """Move card up or down within the same stage"""
     cards = st.session_state.data[stage]
     idx = None
     for i, card in enumerate(cards):
@@ -107,7 +95,7 @@ def add_card(**kwargs):
     save_data(st.session_state.data)
 
 # ============================================================================
-# MODAL DISPLAY (at top)
+# MODAL DISPLAY (at top, before cards)
 # ============================================================================
 
 if st.session_state.selected_card_id is not None:
@@ -122,6 +110,7 @@ if st.session_state.selected_card_id is not None:
                 st.session_state.selected_card_id = None
                 st.rerun()
         
+        # Overview
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Stage", card['stage'])
@@ -130,7 +119,8 @@ if st.session_state.selected_card_id is not None:
         with col3:
             st.metric("Last Contact", card['last_contact'])
         
-        st.subheader("🏢 Location")
+        # Location & Contact
+        st.subheader("🏢 Location & Contact")
         loc_cols = st.columns(3)
         with loc_cols[0]:
             st.write(f"**City:** {card.get('city', 'N/A')}")
@@ -144,8 +134,7 @@ if st.session_state.selected_card_id is not None:
         if card.get('website'):
             st.write(f"**Website:** {card['website']}")
         
-        st.markdown("---")
-        
+        # Strategy
         st.subheader("📊 Strategy")
         strat_cols = st.columns(2)
         with strat_cols[0]:
@@ -153,8 +142,7 @@ if st.session_state.selected_card_id is not None:
         with strat_cols[1]:
             st.write(f"**Contract:** {card.get('contract_structure', 'N/A')}")
         
-        st.markdown("---")
-        
+        # Executives
         st.subheader("👥 Executive Contacts")
         
         for i, (prefix, name_key, email_key, leverage_key) in enumerate([
@@ -173,10 +161,9 @@ if st.session_state.selected_card_id is not None:
                         else:
                             st.write(f"**Leverage:** {leverage}")
         
-        st.markdown("---")
-        
+        # Foundation
         if card.get('foundation_name'):
-            st.subheader("🏛️ Foundation Information")
+            st.subheader("🏛️ Foundation")
             with st.expander(f"Foundation: {card.get('foundation_name')}"):
                 st.write(f"**Leader:** {card.get('foundation_leader', 'N/A')}")
                 st.write(f"📧 {card.get('foundation_email', 'N/A')}")
@@ -189,9 +176,13 @@ if st.session_state.selected_card_id is not None:
                     else:
                         st.write(f"**Leverage:** {foundation_leverage}")
         
-        st.markdown("---")
+        # Next Step
+        if card.get('next_step'):
+            st.subheader("📋 Next Step")
+            st.write(card['next_step'])
         
-        st.subheader("📋 Update/Next Step")
+        # Edit Next Step
+        st.subheader("✏️ Update Next Step")
         new_next_step = st.text_area("Next Step Notes", value=card.get('next_step', ''), key="edit_next_step")
         if st.button("Save Next Step", key="save_next_step"):
             stage_name, _, _ = find_card(st.session_state.selected_card_id)
@@ -408,103 +399,71 @@ with st.expander("➕ Add New Card Manually"):
             st.error("Community Name and Executive 1 Name are required")
 
 st.markdown("---")
-
-# ============================================================================
-# SEARCH/FILTER
-# ============================================================================
-
-st.subheader("🔍 Search Cards")
-search_term = st.text_input("Search by community name:", placeholder="Type community name...")
-
-# Filter data based on search
-filtered_data = {}
-for stage in st.session_state.data.keys():
-    if search_term.strip():
-        filtered_data[stage] = [
-            card for card in st.session_state.data[stage]
-            if search_term.lower() in card['community_name'].lower()
-        ]
-    else:
-        filtered_data[stage] = st.session_state.data[stage]
-
-st.markdown("---")
 st.subheader("Pipeline")
 
 cols = st.columns(6)
-for col, stage_name in zip(cols, filtered_data.keys()):
+for col, stage_name in zip(cols, st.session_state.data.keys()):
     with col:
-        st.metric(stage_name, len(filtered_data[stage_name]))
+        st.metric(stage_name, len(st.session_state.data[stage_name]))
 
 st.markdown("---")
 
 # ============================================================================
-# KANBAN CARDS WITH COLOR-CODED STAGES
+# KANBAN CARDS - SIMPLIFIED WITH BUTTONS INSIDE
 # ============================================================================
 
 columns = st.columns(6)
-for col, stage in zip(columns, filtered_data.keys()):
+for col, stage in zip(columns, st.session_state.data.keys()):
     with col:
-        # Color-coded stage header
-        st.markdown(f"""
-        <div style="background-color: {stage_colors[stage]}; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-            <h3 style="color: white; margin: 0; text-align: center;">{stage}</h3>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        for card_idx, card in enumerate(filtered_data[stage]):
-            stages_list = list(filtered_data.keys())
-            stage_idx = stages_list.index(stage)
+        st.subheader(stage)
+        for card_idx, card in enumerate(st.session_state.data[stage]):
             
-            # Expander header shows: Company Name | Date | Track
-            expander_title = f"{card['community_name']} • {card['last_contact']} • {card.get('prioritization_track', 'N/A')}"
-            
-            with st.expander(expander_title, expanded=False):
-                # Next step preview
-                next_step_preview = get_first_n_words(card.get('next_step', ''), 10)
+            with st.container(border=True):
+                # Card content
+                st.write(f"**{card['community_name']}**")
+                st.caption(f"Last Contact: {card['last_contact']}")
+                
+                # First 5 words of next step
+                next_step_preview = get_first_n_words(card.get('next_step', ''), 5)
                 if next_step_preview:
-                    st.write(f"**Next Step:** {next_step_preview}")
+                    st.caption(f"📋 {next_step_preview}")
                 
-                st.divider()
+                # Prioritization Track instead of tier
+                if card.get('prioritization_track'):
+                    st.caption(f"Track: {card['prioritization_track']}")
                 
-                # Action buttons in a row
-                col1, col2, col3, col4, col5 = st.columns(5, gap="small")
+                # Action buttons - INSIDE the card container
+                st.markdown("---")
+                button_cols = st.columns(5)
                 
-                with col1:
-                    if stage_idx > 0 and st.button("← Prev", key=f"prev_{card['id']}", use_container_width=True):
-                        move_card(card["id"], stage, stages_list[stage_idx - 1])
-                        st.rerun()
-                
-                with col2:
-                    if st.button("📋 View", key=f"view_{card['id']}", use_container_width=True):
+                with button_cols[0]:
+                    if st.button("📋", key=f"view_{card['id']}", help="View details", use_container_width=True):
                         st.session_state.selected_card_id = card['id']
                         st.rerun()
                 
-                with col3:
-                    if st.button("🗑️ Delete", key=f"del_{card['id']}", use_container_width=True):
+                with button_cols[1]:
+                    if card_idx > 0:
+                        if st.button("⬆️", key=f"up_{card['id']}", help="Move up", use_container_width=True):
+                            move_card_within_stage(card["id"], stage, "up")
+                            st.rerun()
+                
+                with button_cols[2]:
+                    if card_idx < len(st.session_state.data[stage]) - 1:
+                        if st.button("⬇️", key=f"down_{card['id']}", help="Move down", use_container_width=True):
+                            move_card_within_stage(card["id"], stage, "down")
+                            st.rerun()
+                
+                with button_cols[3]:
+                    stages_list = list(st.session_state.data.keys())
+                    idx = stages_list.index(stage)
+                    if idx < 5:
+                        if st.button("→", key=f"next_{card['id']}", help="Next stage", use_container_width=True):
+                            move_card(card["id"], stage, stages_list[idx + 1])
+                            st.rerun()
+                
+                with button_cols[4]:
+                    if st.button("🗑️", key=f"del_{card['id']}", help="Delete", use_container_width=True):
                         delete_card(card["id"])
                         st.rerun()
-                
-                with col4:
-                    if stage_idx < 5 and st.button("Next →", key=f"next_{card['id']}", use_container_width=True):
-                        move_card(card["id"], stage, stages_list[stage_idx + 1])
-                        st.rerun()
-                
-                with col5:
-                    st.write("")
-                
-                st.divider()
-                
-                # Up/Down buttons
-                up_col, mid_col, down_col = st.columns(3, gap="small")
-                
-                with up_col:
-                    if card_idx > 0 and st.button("⬆ Up", key=f"up_{card['id']}", use_container_width=True):
-                        move_card_within_stage(card["id"], stage, "up")
-                        st.rerun()
-                
-                with down_col:
-                    if card_idx < len(filtered_data[stage]) - 1 and st.button("⬇ Down", key=f"down_{card['id']}", use_container_width=True):
-                        move_card_within_stage(card["id"], stage, "down")
-                        st.rerun()
 
-st.caption(f"Total cards: {sum(len(c) for c in filtered_data.values())}")
+st.caption(f"Total cards: {sum(len(c) for c in st.session_state.data.values())}")
