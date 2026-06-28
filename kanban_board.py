@@ -40,17 +40,6 @@ if "data" not in st.session_state:
 if "selected_card_id" not in st.session_state:
     st.session_state.selected_card_id = None
 
-if "form_community" not in st.session_state:
-    st.session_state.form_community = ""
-if "form_ed_name" not in st.session_state:
-    st.session_state.form_ed_name = ""
-if "form_ed_email" not in st.session_state:
-    st.session_state.form_ed_email = ""
-if "form_stage" not in st.session_state:
-    st.session_state.form_stage = "Tier 1 Discovery"
-if "form_tier" not in st.session_state:
-    st.session_state.form_tier = 1
-
 def find_card(card_id):
     for stage, cards in st.session_state.data.items():
         for i, card in enumerate(cards):
@@ -83,13 +72,6 @@ def add_card(**kwargs):
     new_card.update(kwargs)
     st.session_state.data[kwargs.get("stage", "Tier 1 Discovery")].append(new_card)
     save_data(st.session_state.data)
-
-def clear_form():
-    st.session_state.form_community = ""
-    st.session_state.form_ed_name = ""
-    st.session_state.form_ed_email = ""
-    st.session_state.form_stage = "Tier 1 Discovery"
-    st.session_state.form_tier = 1
 
 # ============================================================================
 # FILE UPLOAD
@@ -171,62 +153,125 @@ if uploaded_file is not None:
 st.markdown("---")
 
 # ============================================================================
-# ADD CARD MANUALLY
+# ADD CARD MANUALLY - ALL FIELDS
 # ============================================================================
 
 with st.expander("➕ Add New Card Manually"):
-    col1, col2 = st.columns(2)
     
+    # Stage & Tier
+    st.subheader("Basic Info")
+    col1, col2, col3 = st.columns(3)
     with col1:
-        stage = st.selectbox("Stage", list(st.session_state.data.keys()), key="manual_stage")
-        community = st.text_input("Community Name", value=st.session_state.form_community, key="manual_community")
-        ed_name = st.text_input("ED Name", value=st.session_state.form_ed_name, key="manual_ed_name")
-        ed_email = st.text_input("ED Email", value=st.session_state.form_ed_email, key="manual_ed_email")
-    
+        stage = st.selectbox("Stage", list(st.session_state.data.keys()))
     with col2:
-        tier = st.selectbox("Tier", [1, 2, 3], index=st.session_state.form_tier - 1, key="manual_tier")
-        city = st.text_input("City", key="manual_city")
-        state = st.text_input("State", key="manual_state")
-        next_step = st.text_area("Next Step", key="manual_next_step", height=100)
+        tier = st.selectbox("Tier", [1, 2, 3])
+    with col3:
+        prioritization_track = st.text_input("Prioritization Track")
     
+    contract_structure = st.text_input("Primary Contract Structure")
+    
+    # Community Info
+    st.subheader("Community Location")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        community_name = st.text_input("Community Name")
+    with col2:
+        street_address = st.text_input("Street Address")
+    with col3:
+        city = st.text_input("City")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        state = st.text_input("State")
+    with col2:
+        phone = st.text_input("Phone Number")
+    with col3:
+        website = st.text_input("Website")
+    
+    # Executive 1
+    st.subheader("Executive 1 (CEO / ED)")
+    col1, col2 = st.columns(2)
+    with col1:
+        exec1_name = st.text_input("Name")
+    with col2:
+        exec1_email = st.text_input("Email")
+    exec1_leverage = st.text_area("Profile & Leverage Angle", height=80)
+    
+    # Executive 2
+    st.subheader("Executive 2 (Health Admin / DON)")
+    col1, col2 = st.columns(2)
+    with col1:
+        exec2_name = st.text_input("Name", key="exec2_name")
+    with col2:
+        exec2_email = st.text_input("Email", key="exec2_email")
+    exec2_leverage = st.text_area("Profile & Leverage Angle", height=80, key="exec2_leverage")
+    
+    # Executive 3
+    st.subheader("Executive 3 (MC Lead / Clinical Director)")
+    col1, col2 = st.columns(2)
+    with col1:
+        exec3_name = st.text_input("Name", key="exec3_name")
+    with col2:
+        exec3_email = st.text_input("Email", key="exec3_email")
+    exec3_leverage = st.text_area("Profile & Leverage Angle", height=80, key="exec3_leverage")
+    
+    # Foundation
+    st.subheader("Foundation")
+    col1, col2 = st.columns(2)
+    with col1:
+        foundation_name = st.text_input("Foundation Name")
+    with col2:
+        foundation_leader = st.text_input("Foundation Leader Name & Title")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        foundation_email = st.text_input("Foundation Email")
+    with col2:
+        next_step = st.text_area("Next Step", height=100, key="manual_next_step")
+    
+    foundation_leverage = st.text_area("Foundation Strategic Leverage Angle", height=80, key="foundation_leverage_manual")
+    
+    # Submit
     if st.button("Add Card", key="add_btn"):
-        if community and ed_name:
+        if community_name and exec1_name:
             add_card(
                 stage=stage,
-                community_name=community,
+                community_name=community_name,
                 tier=tier,
-                exec1_name=ed_name,
-                exec1_email=ed_email,
+                prioritization_track=prioritization_track,
+                contract_structure=contract_structure,
+                street_address=street_address,
                 city=city,
                 state=state,
-                next_step=next_step,
-                prioritization_track="",
-                contract_structure="",
-                street_address="",
-                phone="",
-                website="",
-                exec2_name="",
-                exec2_email="",
-                exec2_leverage="",
-                exec3_name="",
-                exec3_email="",
-                exec3_leverage="",
-                foundation_name="",
-                foundation_leader="",
-                foundation_email="",
-                foundation_leverage=""
+                phone=phone,
+                website=website,
+                exec1_name=exec1_name,
+                exec1_email=exec1_email,
+                exec1_leverage=exec1_leverage,
+                exec2_name=exec2_name,
+                exec2_email=exec2_email,
+                exec2_leverage=exec2_leverage,
+                exec3_name=exec3_name,
+                exec3_email=exec3_email,
+                exec3_leverage=exec3_leverage,
+                foundation_name=foundation_name,
+                foundation_leader=foundation_leader,
+                foundation_email=foundation_email,
+                foundation_leverage=foundation_leverage,
+                next_step=next_step
             )
             st.success("✅ Card added!")
-            clear_form()
             st.rerun()
+        else:
+            st.error("Community Name and Executive 1 Name are required")
 
 st.markdown("---")
 st.subheader("Pipeline")
 
 cols = st.columns(6)
-for col, stage in zip(cols, st.session_state.data.keys()):
+for col, stage_name in zip(cols, st.session_state.data.keys()):
     with col:
-        st.metric(stage, len(st.session_state.data[stage]))
+        st.metric(stage_name, len(st.session_state.data[stage_name]))
 
 st.markdown("---")
 
@@ -241,16 +286,14 @@ for col, stage in zip(columns, st.session_state.data.keys()):
         for card in st.session_state.data[stage]:
             tier_colors = {1: "🔴", 2: "🟡", 3: "🟢"}
             
-            # Clickable card
             if st.button(
-                f"{tier_colors[card['tier']]} {card['community_name']}\n{card['exec1_name']}",
+                f"{tier_colors[card['tier']]} {card['community_name']}\n{card.get('exec1_name', 'N/A')}",
                 key=f"card_{card['id']}",
                 use_container_width=True
             ):
                 st.session_state.selected_card_id = card['id']
                 st.rerun()
             
-            # Action buttons
             col_del, col_next = st.columns(2)
             with col_del:
                 if st.button("🗑️", key=f"del_{card['id']}", use_container_width=True):
