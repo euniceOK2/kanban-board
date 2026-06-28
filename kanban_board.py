@@ -417,6 +417,9 @@ def get_track_priority(card):
     """Get priority value for a card based on its track"""
     track = card.get('prioritization_track', 'Standard')
     return track_priority.get(track, 99)  # Unknown tracks go to bottom
+
+# Stage styling - unique colors for each column
+stage_styles = {
     "Tier 1 Discovery": {"bg": "#0d47a1", "emoji": "🔍", "accent": "#1976d2"},
     "First Call Scheduled": {"bg": "#e65100", "emoji": "📞", "accent": "#ff6f00"},
     "Pilot Discussion": {"bg": "#1b5e20", "emoji": "💬", "accent": "#2e7d32"},
