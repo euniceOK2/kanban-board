@@ -456,59 +456,76 @@ for col, stage in zip(columns, filtered_data.keys()):
         """, unsafe_allow_html=True)
         
         for card_idx, card in enumerate(filtered_data[stage]):
-            
-            with st.container(border=True):
-                # Improved typography - larger company name
-                st.markdown(f"<h4 style='margin: 0 0 8px 0;'>{card['community_name']}</h4>", unsafe_allow_html=True)
-                
-                # Smaller secondary info
-                st.markdown(f"""
-                <div style='font-size: 12px; color: #666; margin-bottom: 8px;'>
-                    📅 {card['last_contact']}<br>
-                    📍 {card.get('prioritization_track', 'N/A')}
+            # Card HTML with better styling - rounded corners, shadow, padding
+            card_html = f"""
+            <div style="
+                background-color: #1a1a1a;
+                border: 1px solid #333;
+                border-radius: 8px;
+                padding: 15px;
+                margin-bottom: 15px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+                transition: all 0.2s ease;
+            ">
+                <div style="margin-bottom: 12px;">
+                    <h4 style='margin: 0 0 8px 0; color: #fff; font-size: 16px;'>{card['community_name']}</h4>
+                    <div style='font-size: 12px; color: #aaa;'>
+                        📅 {card['last_contact']}<br>
+                        📍 <span style="color: #ffb347;">{card.get('prioritization_track', 'N/A')}</span>
+                    </div>
                 </div>
-                """, unsafe_allow_html=True)
-                
-                # First 5 words of next step
-                next_step_preview = get_first_n_words(card.get('next_step', ''), 5)
-                if next_step_preview:
-                    st.markdown(f"<div style='font-size: 11px; font-style: italic; color: #888; margin-bottom: 10px;'>📋 {next_step_preview}</div>", unsafe_allow_html=True)
-                
-                # Better button layout - 2 rows
-                st.markdown("---")
-                
-                # Top row - main actions
-                button_cols = st.columns(3)
-                with button_cols[0]:
-                    if st.button("📋 View", key=f"view_{card['id']}", use_container_width=True):
-                        st.session_state.selected_card_id = card['id']
+            """
+            
+            # First 5 words of next step
+            next_step_preview = get_first_n_words(card.get('next_step', ''), 5)
+            if next_step_preview:
+                card_html += f"""
+                <div style='font-size: 11px; font-style: italic; color: #888; margin-bottom: 12px; padding-top: 8px; border-top: 1px solid #333;'>
+                    📋 {next_step_preview}
+                </div>
+                """
+            
+            card_html += """
+            </div>
+            """
+            
+            st.markdown(card_html, unsafe_allow_html=True)
+            
+            # Better button layout - 2 rows
+            button_cols = st.columns(3)
+            with button_cols[0]:
+                if st.button("📋 View", key=f"view_{card['id']}", use_container_width=True):
+                    st.session_state.selected_card_id = card['id']
+                    st.rerun()
+            
+            with button_cols[1]:
+                stages_list = list(filtered_data.keys())
+                idx = stages_list.index(stage)
+                if idx < 5:
+                    if st.button("→ Next", key=f"next_{card['id']}", use_container_width=True):
+                        move_card(card["id"], stage, stages_list[idx + 1])
                         st.rerun()
-                
-                with button_cols[1]:
-                    stages_list = list(filtered_data.keys())
-                    idx = stages_list.index(stage)
-                    if idx < 5:
-                        if st.button("→ Next", key=f"next_{card['id']}", use_container_width=True):
-                            move_card(card["id"], stage, stages_list[idx + 1])
-                            st.rerun()
-                
-                with button_cols[2]:
-                    if st.button("🗑️ Delete", key=f"del_{card['id']}", use_container_width=True):
-                        delete_card(card["id"])
+            
+            with button_cols[2]:
+                if st.button("🗑️ Delete", key=f"del_{card['id']}", use_container_width=True):
+                    delete_card(card["id"])
+                    st.rerun()
+            
+            # Bottom row - move within stage
+            move_cols = st.columns(2)
+            with move_cols[0]:
+                if card_idx > 0:
+                    if st.button("⬆️ Up", key=f"up_{card['id']}", use_container_width=True):
+                        move_card_within_stage(card["id"], stage, "up")
                         st.rerun()
-                
-                # Bottom row - move within stage
-                move_cols = st.columns(2)
-                with move_cols[0]:
-                    if card_idx > 0:
-                        if st.button("⬆️ Up", key=f"up_{card['id']}", use_container_width=True):
-                            move_card_within_stage(card["id"], stage, "up")
-                            st.rerun()
-                
-                with move_cols[1]:
-                    if card_idx < len(filtered_data[stage]) - 1:
-                        if st.button("⬇️ Down", key=f"down_{card['id']}", use_container_width=True):
-                            move_card_within_stage(card["id"], stage, "down")
-                            st.rerun()
+            
+            with move_cols[1]:
+                if card_idx < len(filtered_data[stage]) - 1:
+                    if st.button("⬇️ Down", key=f"down_{card['id']}", use_container_width=True):
+                        move_card_within_stage(card["id"], stage, "down")
+                        st.rerun()
+            
+            # Add spacing between cards
+            st.markdown("<div style='margin-bottom: 10px;'></div>", unsafe_allow_html=True)
 
 st.caption(f"Total cards: {sum(len(c) for c in filtered_data.values())}")
