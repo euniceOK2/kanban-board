@@ -1,6 +1,8 @@
 import streamlit as st
 import json
 import os
+import csv
+from io import StringIO
 from datetime import datetime
 
 DATA_FILE = "kanban_data.json"
@@ -73,20 +75,109 @@ def add_card(stage, community_name, ed_name, ed_email, ed_phone, next_followup, 
     st.session_state.data[stage].append(new_card)
     save_data(st.session_state.data)
 
-with st.expander("Add New Card"):
+# ============================================================================
+# FILE UPLOAD SECTION
+# ============================================================================
+
+st.subheader("📤 Bulk Import Cards from CSV")
+
+with st.expander("Instructions & Example"):
+    st.write("Upload a CSV file with the following columns:")
+    st.code("stage,community_name,ed_name,ed_email,ed_phone,next_followup,tier,notes")
+    
+    st.write("**Column Details:**")
+    st.write("- **stage**: Must be one of: Tier 1 Discovery, First Call Scheduled, Pilot Discussion, Pilot Agreement, Deployment, Results")
+    st.write("- **community_name**: Senior living community name (required)")
+    st.write("- **ed_name**: Executive Director name (required)")
+    st.write("- **ed_email**: Email address")
+    st.write("- **ed_phone**: Phone number")
+    st.write("- **next_followup**: Date in YYYY-MM-DD format (e.g., 2026-07-15)")
+    st.write("- **tier**: 1, 2, or 3")
+    st.write("- **notes**: Any additional notes (optional)")
+    
+    st.write("**Example CSV:**")
+    example_csv = """stage,community_name,ed_name,ed_email,ed_phone,next_followup,tier,notes
+Tier 1 Discovery,Sunrise Senior Living,Jane Smith,jane@sunrise.com,555-0101,2026-07-10,1,Initial contact made
+First Call Scheduled,Brookdale Homes,Mike Johnson,mike@brookdale.com,555-0102,2026-07-15,2,Meeting confirmed
+Pilot Discussion,Sunrise Assisted Living,Sarah Lee,sarah@sunrise-al.com,555-0103,2026-07-20,1,Discussed pilot scope"""
+    st.code(example_csv, language="csv")
+
+uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+
+if uploaded_file is not None:
+    try:
+        # Read the CSV file
+        stream = StringIO(uploaded_file.getvalue().decode("utf8"), newline=None)
+        csv_data = csv.DictReader(stream)
+        
+        valid_stages = ["Tier 1 Discovery", "First Call Scheduled", "Pilot Discussion", "Pilot Agreement", "Deployment", "Results"]
+        
+        cards_added = 0
+        errors = []
+        
+        for row_num, row in enumerate(csv_data, start=2):  # Start at 2 because row 1 is header
+            try:
+                stage = row.get("stage", "").strip()
+                community_name = row.get("community_name", "").strip()
+                ed_name = row.get("ed_name", "").strip()
+                ed_email = row.get("ed_email", "").strip()
+                ed_phone = row.get("ed_phone", "").strip()
+                next_followup = row.get("next_followup", "").strip()
+                tier = int(row.get("tier", 1))
+                notes = row.get("notes", "").strip()
+                
+                # Validation
+                if not stage or stage not in valid_stages:
+                    errors.append(f"Row {row_num}: Invalid stage '{stage}'")
+                    continue
+                if not community_name:
+                    errors.append(f"Row {row_num}: Missing community_name")
+                    continue
+                if not ed_name:
+                    errors.append(f"Row {row_num}: Missing ed_name")
+                    continue
+                if tier not in [1, 2, 3]:
+                    errors.append(f"Row {row_num}: Tier must be 1, 2, or 3")
+                    continue
+                
+                # Add the card
+                add_card(stage, community_name, ed_name, ed_email, ed_phone, next_followup, tier, notes)
+                cards_added += 1
+                
+            except Exception as e:
+                errors.append(f"Row {row_num}: {str(e)}")
+        
+        if cards_added > 0:
+            st.success(f"✅ {cards_added} cards imported successfully!")
+        
+        if errors:
+            with st.expander(f"⚠️ {len(errors)} rows had errors"):
+                for error in errors:
+                    st.write(error)
+    
+    except Exception as e:
+        st.error(f"Error reading file: {str(e)}")
+
+st.markdown("---")
+
+# ============================================================================
+# MANUAL ENTRY SECTION
+# ============================================================================
+
+with st.expander("➕ Add New Card Manually"):
     col1, col2 = st.columns(2)
     with col1:
-        stage = st.selectbox("Stage", list(st.session_state.data.keys()))
-        community_name = st.text_input("Community Name")
-        ed_name = st.text_input("ED Name")
-        ed_email = st.text_input("ED Email")
+        stage = st.selectbox("Stage", list(st.session_state.data.keys()), key="manual_stage")
+        community_name = st.text_input("Community Name", key="manual_community")
+        ed_name = st.text_input("ED Name", key="manual_ed_name")
+        ed_email = st.text_input("ED Email", key="manual_email")
     with col2:
-        ed_phone = st.text_input("ED Phone")
-        next_followup = st.date_input("Next Follow-up Date")
-        tier = st.selectbox("Tier", [1, 2, 3])
-        notes = st.text_area("Notes")
+        ed_phone = st.text_input("ED Phone", key="manual_phone")
+        next_followup = st.date_input("Next Follow-up Date", key="manual_date")
+        tier = st.selectbox("Tier", [1, 2, 3], key="manual_tier")
+        notes = st.text_area("Notes", key="manual_notes")
     
-    if st.button("Add Card"):
+    if st.button("Add Card", key="manual_add_btn"):
         if community_name and ed_name:
             add_card(stage, community_name, ed_name, ed_email, ed_phone, next_followup.strftime("%Y-%m-%d"), tier, notes)
             st.success("Card added!")
