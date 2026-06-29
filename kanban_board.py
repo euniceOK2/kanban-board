@@ -4,6 +4,7 @@ import os
 import csv
 from io import StringIO
 from datetime import datetime
+from html import escape
 
 DATA_FILE = "kanban_data.json"
 
@@ -35,8 +36,508 @@ def get_first_n_words(text, n=5):
     words = str(text).split()
     return " ".join(words[:n]) + ("..." if len(words) > n else "")
 
+def display_value(value, default="N/A"):
+    """Escape values before placing them inside custom HTML."""
+    if value is None:
+        return default
+    value = str(value).strip()
+    return escape(value) if value else default
+
+def make_url(value):
+    """Return a safe URL for website links."""
+    if value is None:
+        return ""
+    url = str(value).strip()
+    if not url:
+        return ""
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    return escape(url, quote=True)
+
+def make_email_link(email):
+    email = "" if email is None else str(email).strip()
+    if not email:
+        return "N/A"
+    safe_email = escape(email)
+    return f'<a href="mailto:{safe_email}">{safe_email}</a>'
+
+def render_exec_contact(label, name, email, leverage, muted=False):
+    name_text = display_value(name, "")
+    if not name_text:
+        return ""
+
+    muted_class = " muted" if muted else ""
+    leverage_html = ""
+
+    if str(leverage or "").strip():
+        leverage_html = f"""
+            <div class="exec-leverage-label">Profile &amp; Leverage Angle:</div>
+            <div class="exec-leverage">{display_value(leverage)}</div>
+        """
+
+    return f"""
+        <div class="exec-row{muted_class}">
+            <div class="exec-icon">✉</div>
+            <div class="exec-body">
+                <div class="exec-title">{display_value(label)}: {name_text}</div>
+                <div class="exec-email">{make_email_link(email)}</div>
+                {leverage_html}
+            </div>
+            <div class="exec-chevron">⌄</div>
+        </div>
+    """
+
+def render_company_detail_html(card):
+    website_url = make_url(card.get("website"))
+    website_html = (
+        f'<a href="{website_url}" target="_blank">{display_value(card.get("website"))} ↗</a>'
+        if website_url else "N/A"
+    )
+
+    exec_html = "".join([
+        render_exec_contact(
+            "Executive 1 (ED)",
+            card.get("exec1_name"),
+            card.get("exec1_email"),
+            card.get("exec1_leverage")
+        ),
+        render_exec_contact(
+            "Executive 2",
+            card.get("exec2_name"),
+            card.get("exec2_email"),
+            card.get("exec2_leverage")
+        ),
+        render_exec_contact(
+            "Executive 3",
+            card.get("exec3_name"),
+            card.get("exec3_email"),
+            card.get("exec3_leverage"),
+            muted=True
+        ),
+    ])
+
+    foundation_html = ""
+
+    if str(card.get("foundation_name", "")).strip():
+        foundation_html = f"""
+            <details class="company-accordion">
+                <summary>
+                    <span><span class="section-icon">🏛</span> Foundation</span>
+                    <span class="summary-caret">⌄</span>
+                </summary>
+
+                <div class="foundation-row">
+                    <div>
+                        <div class="micro-label">Foundation</div>
+                        <strong>{display_value(card.get("foundation_name"))}</strong>
+                    </div>
+                    <div>
+                        <div class="micro-label">Leader</div>
+                        <strong>{display_value(card.get("foundation_leader"))}</strong>
+                    </div>
+                    <div>
+                        <div class="micro-label">Email</div>
+                        {make_email_link(card.get("foundation_email"))}
+                    </div>
+                </div>
+
+                {
+                    "<div class='foundation-leverage'><strong>Strategic Leverage Angle:</strong><br>"
+                    + display_value(card.get("foundation_leverage"))
+                    + "</div>"
+                    if str(card.get("foundation_leverage", "")).strip()
+                    else ""
+                }
+            </details>
+        """
+
+    return f"""
+    <div class="company-shell">
+        <div class="company-glow"></div>
+
+        <div class="company-header-row">
+            <div class="company-identity">
+                <div class="company-avatar">🏢</div>
+                <div>
+                    <div class="company-eyebrow">Selected account</div>
+                    <h2>{display_value(card.get("community_name"))}</h2>
+                </div>
+            </div>
+
+            <div class="quickwin-pill">
+                <div class="micro-label">Strategy Track</div>
+                <strong>{display_value(card.get("prioritization_track"))}</strong>
+            </div>
+        </div>
+
+        <div class="company-metric-grid">
+            <div class="metric-item">
+                <div class="metric-icon">▰</div>
+                <div>
+                    <div class="micro-label">Stage</div>
+                    <strong>{display_value(card.get("stage"))}</strong>
+                </div>
+            </div>
+
+            <div class="metric-item">
+                <div class="metric-icon">★</div>
+                <div>
+                    <div class="micro-label">Prioritization Track</div>
+                    <strong>{display_value(card.get("prioritization_track"))}</strong>
+                </div>
+            </div>
+
+            <div class="metric-item">
+                <div class="metric-icon">📍</div>
+                <div>
+                    <div class="micro-label">Location &amp; Contact</div>
+                    <strong>{display_value(card.get("city"))}, {display_value(card.get("state"))}</strong>
+                    <div class="metric-sub">{display_value(card.get("phone"))}</div>
+                    <div class="metric-sub">{website_html}</div>
+                </div>
+            </div>
+
+            <div class="metric-item">
+                <div class="metric-icon">▣</div>
+                <div>
+                    <div class="micro-label">Contract Type</div>
+                    <strong>{display_value(card.get("contract_structure"))}</strong>
+                </div>
+            </div>
+        </div>
+
+        <details class="company-accordion" open>
+            <summary>
+                <span><span class="section-icon">📊</span> Strategy</span>
+                <span class="summary-caret">⌄</span>
+            </summary>
+
+            <div class="strategy-strip">
+                <div>
+                    <span>Track</span>
+                    <strong>{display_value(card.get("prioritization_track"))}</strong>
+                </div>
+                <div>
+                    <span>Contract</span>
+                    <strong>{display_value(card.get("contract_structure"))}</strong>
+                </div>
+                <div>
+                    <span>Address</span>
+                    <strong>{display_value(card.get("street_address"))}</strong>
+                </div>
+            </div>
+        </details>
+
+        <details class="company-accordion" open>
+            <summary>
+                <span><span class="section-icon">👥</span> Executive Contacts</span>
+                <span class="summary-caret">⌃</span>
+            </summary>
+
+            <div class="exec-list">
+                {exec_html if exec_html.strip() else "<div class='empty-state'>No executive contacts yet.</div>"}
+            </div>
+        </details>
+
+        {foundation_html}
+
+        <div class="nextstep-shell">
+            <div class="nextstep-title"><span class="section-icon">✏️</span> Update Next Step</div>
+            <div class="nextstep-note">Use the field below to update the next action for this account.</div>
+        </div>
+    </div>
+    """
+
 st.set_page_config(page_title="ED Sales Pipeline Kanban", layout="wide")
 st.title("🏥 ED Sales Pipeline Kanban")
+
+st.markdown("""
+<style>
+/* ==========================================================================
+   Account detail block redesign
+   ========================================================================== */
+
+.company-shell {
+    position: relative;
+    border: 1px solid rgba(168, 85, 247, 0.90);
+    box-shadow:
+        0 0 0 1px rgba(168, 85, 247, 0.20) inset,
+        0 0 24px rgba(168, 85, 247, 0.28),
+        0 18px 60px rgba(0, 0, 0, 0.35);
+    border-radius: 18px;
+    padding: 28px;
+    margin: 18px 0 14px 0;
+    background:
+        radial-gradient(circle at 12% 0%, rgba(124, 58, 237, 0.20), transparent 32%),
+        linear-gradient(135deg, rgba(20, 23, 36, 0.98), rgba(10, 14, 25, 0.98));
+    overflow: hidden;
+}
+
+.company-shell::after {
+    content: "▦";
+    position: absolute;
+    right: 42px;
+    top: 52px;
+    color: rgba(168, 85, 247, 0.08);
+    font-size: 118px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.company-header-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: flex-start;
+    margin-bottom: 26px;
+}
+
+.company-identity {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.company-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+    background: rgba(124, 58, 237, 0.18);
+    border: 1px solid rgba(168, 85, 247, 0.42);
+}
+
+.company-eyebrow,
+.micro-label {
+    color: rgba(226, 232, 240, 0.62);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    margin-bottom: 4px;
+}
+
+.company-identity h2 {
+    color: #f8fafc;
+    font-size: 28px;
+    line-height: 1.15;
+    margin: 0;
+    font-weight: 800;
+}
+
+.quickwin-pill {
+    min-width: 170px;
+    border-radius: 18px;
+    padding: 14px 18px;
+    background: rgba(124, 58, 237, 0.16);
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    text-align: left;
+}
+
+.quickwin-pill strong {
+    color: #ffffff;
+    font-size: 18px;
+}
+
+.company-metric-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1.15fr 1.75fr 1.65fr;
+    gap: 0;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+    margin-bottom: 22px;
+}
+
+.metric-item {
+    display: flex;
+    gap: 15px;
+    padding: 20px 24px 20px 0;
+    min-height: 86px;
+    border-right: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.metric-item:last-child {
+    border-right: none;
+}
+
+.metric-icon,
+.section-icon {
+    color: #a855f7;
+    font-size: 24px;
+    min-width: 30px;
+}
+
+.metric-item strong {
+    color: #f8fafc;
+    font-size: 16px;
+}
+
+.metric-sub {
+    margin-top: 4px;
+    color: rgba(226, 232, 240, 0.82);
+    font-size: 14px;
+}
+
+.company-shell a {
+    color: #38bdf8;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.company-accordion {
+    margin-top: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.48);
+    overflow: hidden;
+}
+
+.company-accordion summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    color: #f8fafc;
+    font-size: 18px;
+    font-weight: 800;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.company-accordion summary::-webkit-details-marker {
+    display: none;
+}
+
+.summary-caret {
+    color: rgba(226, 232, 240, 0.70);
+    font-size: 18px;
+}
+
+.strategy-strip,
+.foundation-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding: 16px;
+}
+
+.strategy-strip div,
+.foundation-row div {
+    border-radius: 10px;
+    background: rgba(2, 6, 23, 0.28);
+    padding: 12px 14px;
+}
+
+.strategy-strip span {
+    display: block;
+    color: rgba(226, 232, 240, 0.62);
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.exec-list {
+    padding: 12px;
+}
+
+.exec-row {
+    display: grid;
+    grid-template-columns: 44px 1fr 20px;
+    gap: 12px;
+    align-items: start;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: rgba(2, 6, 23, 0.30);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.exec-row.muted {
+    opacity: .70;
+}
+
+.exec-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    color: #e9d5ff;
+    background: rgba(124, 58, 237, 0.28);
+    border: 1px solid rgba(168, 85, 247, 0.30);
+}
+
+.exec-title {
+    color: #f8fafc;
+    font-weight: 800;
+    margin-bottom: 2px;
+}
+
+.exec-email {
+    margin-bottom: 10px;
+}
+
+.exec-leverage-label {
+    color: #f8fafc;
+    font-weight: 800;
+    margin-top: 6px;
+    margin-bottom: 4px;
+}
+
+.exec-leverage,
+.foundation-leverage,
+.empty-state {
+    color: rgba(226, 232, 240, 0.86);
+    line-height: 1.45;
+}
+
+.exec-chevron {
+    color: rgba(226, 232, 240, 0.72);
+    font-size: 18px;
+}
+
+.foundation-leverage {
+    padding: 0 16px 16px 16px;
+}
+
+.nextstep-shell {
+    margin-top: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    border-radius: 12px;
+    padding: 14px 16px;
+    background: rgba(15, 23, 42, 0.48);
+}
+
+.nextstep-title {
+    color: #f8fafc;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.nextstep-note {
+    color: rgba(226, 232, 240, 0.64);
+    margin-top: 4px;
+    font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+    .company-header-row,
+    .company-metric-grid,
+    .strategy-strip,
+    .foundation-row {
+        grid-template-columns: 1fr;
+        display: grid;
+    }
+
+    .metric-item {
+        border-right: none;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    }
+}
+</style>
+""", unsafe_allow_html=True)
 
 if "data" not in st.session_state:
     st.session_state.data = load_data()
@@ -57,30 +558,34 @@ def move_card(card_id, from_stage, to_stage):
         if card["id"] == card_id:
             from_idx = i
             break
+
     if from_idx is not None:
         card = st.session_state.data[from_stage].pop(from_idx)
         st.session_state.data[to_stage].append(card)
         save_data(st.session_state.data)
 
 def move_card_within_stage(card_id, stage, direction):
-    """Move card up or down within the same stage"""
+    """Move card up or down within the same stage."""
     cards = st.session_state.data[stage]
     idx = None
+
     for i, card in enumerate(cards):
         if card["id"] == card_id:
             idx = i
             break
-    
+
     if idx is not None:
         if direction == "up" and idx > 0:
-            cards[idx], cards[idx-1] = cards[idx-1], cards[idx]
+            cards[idx], cards[idx - 1] = cards[idx - 1], cards[idx]
             save_data(st.session_state.data)
+
         elif direction == "down" and idx < len(cards) - 1:
-            cards[idx], cards[idx+1] = cards[idx+1], cards[idx]
+            cards[idx], cards[idx + 1] = cards[idx + 1], cards[idx]
             save_data(st.session_state.data)
 
 def delete_card(card_id):
     stage, idx, _ = find_card(card_id)
+
     if stage is not None:
         st.session_state.data[stage].pop(idx)
         save_data(st.session_state.data)
@@ -90,106 +595,51 @@ def add_card(**kwargs):
         "id": get_next_id(st.session_state.data),
         "last_contact": datetime.now().strftime("%Y-%m-%d"),
     }
+
     new_card.update(kwargs)
     st.session_state.data[kwargs.get("stage", "Tier 1 Discovery")].append(new_card)
     save_data(st.session_state.data)
 
 # ============================================================================
-# MODAL DISPLAY (at top, before cards)
+# SELECTED ACCOUNT DETAIL BLOCK
 # ============================================================================
 
 if st.session_state.selected_card_id is not None:
     stage, idx, card = find_card(st.session_state.selected_card_id)
-    
+
     if card:
-        # Header with close button
-        col_title, col_close = st.columns([11, 1])
-        with col_title:
-            st.markdown(f"### 🏢 {card['community_name']}")
-        with col_close:
-            if st.button("✕", key="close_modal", help="Close"):
+        close_col_left, close_col_right = st.columns([10, 1])
+
+        with close_col_right:
+            if st.button("✕", key="close_modal", help="Close selected account"):
                 st.session_state.selected_card_id = None
                 st.rerun()
-        
-        # Detail info in columns
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.markdown("**📋 STAGE**")
-            st.markdown(f"`{card['stage']}`")
-        with col2:
-            st.markdown("**⭐ TRACK**")
-            st.markdown(f"`{card.get('prioritization_track', 'N/A')}`")
-        with col3:
-            st.markdown("**📋 CONTRACT TYPE**")
-            st.markdown(f"`{card.get('contract_structure', 'N/A')}`")
-        
-        st.divider()
-        
-        # Location info
-        st.markdown("**📍 LOCATION & CONTACT**")
-        loc_col1, loc_col2, loc_col3 = st.columns(3)
-        with loc_col1:
-            st.write(f"**City, State:** {card.get('city', 'N/A')}, {card.get('state', 'N/A')}")
-        with loc_col2:
-            st.write(f"**Phone:** {card.get('phone', 'N/A')}")
-        with loc_col3:
-            if card.get('website'):
-                st.write(f"**Website:** [{card.get('website')}]({card.get('website')})")
-        
-        st.divider()
-        
-        # Strategy section
-        with st.expander("📊 Strategy", expanded=True):
-            strat_cols = st.columns(2)
-            with strat_cols[0]:
-                st.write(f"**Prioritization Track:** {card.get('prioritization_track', 'N/A')}")
-            with strat_cols[1]:
-                st.write(f"**Contract Structure:** {card.get('contract_structure', 'N/A')}")
-        
-        # Executives
-        with st.expander("👥 Executive Contacts", expanded=True):
-            for i, (prefix, name_key, email_key, leverage_key) in enumerate([
-                ("Executive 1 (ED)", "exec1_name", "exec1_email", "exec1_leverage"),
-                ("Executive 2", "exec2_name", "exec2_email", "exec2_leverage"),
-                ("Executive 3", "exec3_name", "exec3_email", "exec3_leverage"),
-            ]):
-                if card.get(name_key):
-                    with st.expander(f"{prefix}: {card.get(name_key, 'N/A')}", expanded=(i==0)):
-                        st.write(f"📧 {card.get(email_key, 'N/A')}")
-                        leverage = card.get(leverage_key, "")
-                        if leverage:
-                            st.write("**Profile & Leverage Angle:**")
-                            st.write(leverage)
-        
-        # Foundation
-        if card.get('foundation_name'):
-            with st.expander("🏛️ Foundation"):
-                st.write(f"**Foundation:** {card.get('foundation_name', 'N/A')}")
-                st.write(f"**Leader:** {card.get('foundation_leader', 'N/A')}")
-                st.write(f"📧 {card.get('foundation_email', 'N/A')}")
-                
-                foundation_leverage = card.get('foundation_leverage', "")
-                if foundation_leverage:
-                    st.write("**Strategic Leverage Angle:**")
-                    st.write(foundation_leverage)
-        
-        # Next Step
-        st.markdown("---")
-        st.subheader("📝 Update Next Step")
-        new_next_step = st.text_area("Next Step Notes", value=card.get('next_step', ''), key="edit_next_step")
-        if st.button("Save Next Step", key="save_next_step"):
+
+        st.markdown(render_company_detail_html(card), unsafe_allow_html=True)
+
+        new_next_step = st.text_area(
+            "Next Step Notes",
+            value=card.get("next_step", ""),
+            key="edit_next_step",
+            label_visibility="collapsed",
+            placeholder="Add notes here..."
+        )
+
+        if st.button("💾 Save Next Step", key="save_next_step"):
             stage_name, _, _ = find_card(st.session_state.selected_card_id)
             idx_card = None
+
             for i, c in enumerate(st.session_state.data[stage_name]):
                 if c["id"] == st.session_state.selected_card_id:
                     idx_card = i
                     break
+
             if idx_card is not None:
-                st.session_state.data[stage_name][idx_card]['next_step'] = new_next_step
+                st.session_state.data[stage_name][idx_card]["next_step"] = new_next_step
                 save_data(st.session_state.data)
                 st.success("✅ Saved!")
                 st.rerun()
-        
+
         st.markdown("---")
 
 # ============================================================================
@@ -200,7 +650,18 @@ st.subheader("📤 Bulk Import Cards from CSV")
 
 with st.expander("Instructions"):
     st.write("Upload a CSV with these columns:")
-    st.code("Stage,Prioritization Track,Primary Contract Structure,Community Name,Street Address,City,State,Phone Number,Website Address,Executive 1: CEO / ED Name,Executive 1: Direct Business Email,Executive 1: Profile & Leverage Angle,Executive 2: Health Admin / DON Name,Executive 2 Email,Executive 2: Profile & Leverage Angle,Executive 3: MC Lead / Clinical Director,Executive 3 Email,Executive 3: Profile & Leverage Angle,Foundation Entity Name,Foundation Leader Name & Title,Foundation Leader Direct Business Email,Foundation Strategic Leverage Angle")
+    st.code(
+        "Stage,Prioritization Track,Primary Contract Structure,Community Name,"
+        "Street Address,City,State,Phone Number,Website Address,"
+        "Executive 1: CEO / ED Name,Executive 1: Direct Business Email,"
+        "Executive 1: Profile & Leverage Angle,"
+        "Executive 2: Health Admin / DON Name,Executive 2 Email,"
+        "Executive 2: Profile & Leverage Angle,"
+        "Executive 3: MC Lead / Clinical Director,Executive 3 Email,"
+        "Executive 3: Profile & Leverage Angle,"
+        "Foundation Entity Name,Foundation Leader Name & Title,"
+        "Foundation Leader Direct Business Email,Foundation Strategic Leverage Angle"
+    )
 
 uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
 
@@ -208,9 +669,16 @@ if uploaded_file is not None:
     try:
         stream = StringIO(uploaded_file.getvalue().decode("utf8"), newline=None)
         csv_data = csv.DictReader(stream)
-        
-        valid_stages = ["Tier 1 Discovery", "First Call Scheduled", "Pilot Discussion", "Pilot Agreement", "Deployment", "Results"]
-        
+
+        valid_stages = [
+            "Tier 1 Discovery",
+            "First Call Scheduled",
+            "Pilot Discussion",
+            "Pilot Agreement",
+            "Deployment",
+            "Results"
+        ]
+
         stage_mapping = {
             "Discovery": "Tier 1 Discovery",
             "Tier 1 Discovery": "Tier 1 Discovery",
@@ -221,25 +689,26 @@ if uploaded_file is not None:
             "Deployment": "Deployment",
             "Results": "Results"
         }
-        
+
         cards_added = 0
         errors = []
-        
+
         for row_num, row in enumerate(csv_data, start=2):
             try:
                 stage = row.get("Stage", "").strip()
                 stage = stage_mapping.get(stage, stage)
-                
+
                 community_name = row.get("Community Name", "").strip()
                 ed_name = row.get("Executive 1: CEO / ED Name", "").strip()
-                
+
                 if not stage or stage not in valid_stages:
                     errors.append(f"Row {row_num}: Invalid stage '{stage}'")
                     continue
+
                 if not community_name or not ed_name:
                     errors.append(f"Row {row_num}: Missing Community Name or ED Name")
                     continue
-                
+
                 card_data = {
                     "stage": stage,
                     "community_name": community_name,
@@ -266,20 +735,21 @@ if uploaded_file is not None:
                     "foundation_leverage": row.get("Foundation Strategic Leverage Angle", "").strip(),
                     "next_step": ""
                 }
-                
+
                 add_card(**card_data)
                 cards_added += 1
-                
+
             except Exception as e:
                 errors.append(f"Row {row_num}: {str(e)}")
-        
+
         if cards_added > 0:
             st.success(f"✅ {cards_added} cards imported!")
+
         if errors:
             with st.expander(f"⚠️ {len(errors)} errors"):
                 for error in errors:
                     st.write(error)
-    
+
     except Exception as e:
         st.error(f"Error: {str(e)}")
 
@@ -290,74 +760,113 @@ st.markdown("---")
 # ============================================================================
 
 with st.expander("➕ Add New Card Manually"):
-    
     st.subheader("Basic Info")
+
     col1, col2, col3 = st.columns(3)
+
     with col1:
         stage = st.selectbox("Stage", list(st.session_state.data.keys()))
+
     with col2:
         tier = st.selectbox("Tier", [1, 2, 3])
+
     with col3:
         prioritization_track = st.text_input("Prioritization Track")
-    
+
     contract_structure = st.text_input("Primary Contract Structure")
-    
+
     st.subheader("Community Location")
+
     col1, col2, col3 = st.columns(3)
+
     with col1:
         community_name = st.text_input("Community Name")
+
     with col2:
         street_address = st.text_input("Street Address")
+
     with col3:
         city = st.text_input("City")
-    
+
     col1, col2, col3 = st.columns(3)
+
     with col1:
         state = st.text_input("State")
+
     with col2:
         phone = st.text_input("Phone Number")
+
     with col3:
         website = st.text_input("Website")
-    
+
     st.subheader("Executive 1 (CEO / ED)")
+
     col1, col2 = st.columns(2)
+
     with col1:
         exec1_name = st.text_input("Name")
+
     with col2:
         exec1_email = st.text_input("Email")
+
     exec1_leverage = st.text_area("Profile & Leverage Angle", height=80)
-    
+
     st.subheader("Executive 2 (Health Admin / DON)")
+
     col1, col2 = st.columns(2)
+
     with col1:
         exec2_name = st.text_input("Name", key="exec2_name")
+
     with col2:
         exec2_email = st.text_input("Email", key="exec2_email")
-    exec2_leverage = st.text_area("Profile & Leverage Angle", height=80, key="exec2_leverage")
-    
+
+    exec2_leverage = st.text_area(
+        "Profile & Leverage Angle",
+        height=80,
+        key="exec2_leverage"
+    )
+
     st.subheader("Executive 3 (MC Lead / Clinical Director)")
+
     col1, col2 = st.columns(2)
+
     with col1:
         exec3_name = st.text_input("Name", key="exec3_name")
+
     with col2:
         exec3_email = st.text_input("Email", key="exec3_email")
-    exec3_leverage = st.text_area("Profile & Leverage Angle", height=80, key="exec3_leverage")
-    
+
+    exec3_leverage = st.text_area(
+        "Profile & Leverage Angle",
+        height=80,
+        key="exec3_leverage"
+    )
+
     st.subheader("Foundation")
+
     col1, col2 = st.columns(2)
+
     with col1:
         foundation_name = st.text_input("Foundation Name")
+
     with col2:
         foundation_leader = st.text_input("Foundation Leader Name & Title")
-    
+
     col1, col2 = st.columns(2)
+
     with col1:
         foundation_email = st.text_input("Foundation Email")
+
     with col2:
         next_step = st.text_area("Next Step", height=100, key="manual_next_step")
-    
-    foundation_leverage = st.text_area("Foundation Strategic Leverage Angle", height=80, key="foundation_leverage_manual")
-    
+
+    foundation_leverage = st.text_area(
+        "Foundation Strategic Leverage Angle",
+        height=80,
+        key="foundation_leverage_manual"
+    )
+
     if st.button("Add Card", key="add_btn"):
         if community_name and exec1_name:
             add_card(
@@ -386,12 +895,15 @@ with st.expander("➕ Add New Card Manually"):
                 foundation_leverage=foundation_leverage,
                 next_step=next_step
             )
+
             st.success("✅ Card added!")
             st.rerun()
+
         else:
             st.error("Community Name and Executive 1 Name are required")
 
-# Track priority for sorting (higher number = higher priority = appears first)
+# Track priority for sorting.
+# Lower number appears first.
 track_priority = {
     "Quick Win": 1,
     "Regional Powerhouse": 2,
@@ -399,112 +911,179 @@ track_priority = {
 }
 
 def get_track_priority(card):
-    """Get priority value for a card based on its track"""
-    track = card.get('prioritization_track', 'Standard')
-    return track_priority.get(track, 99)  # Unknown tracks go to bottom
+    """Get priority value for a card based on its track."""
+    track = card.get("prioritization_track", "Standard")
+    return track_priority.get(track, 99)
 
-# Stage styling - unique colors for each column
+# Stage styling.
 stage_styles = {
-    "Tier 1 Discovery": {"bg": "#0d47a1", "emoji": "🔍", "accent": "#1976d2"},
-    "First Call Scheduled": {"bg": "#e65100", "emoji": "📞", "accent": "#ff6f00"},
-    "Pilot Discussion": {"bg": "#1b5e20", "emoji": "💬", "accent": "#2e7d32"},
-    "Pilot Agreement": {"bg": "#880e4f", "emoji": "📋", "accent": "#c2185b"},
-    "Deployment": {"bg": "#4a148c", "emoji": "🚀", "accent": "#7b1fa2"},
-    "Results": {"bg": "#5d4037", "emoji": "✅", "accent": "#795548"}
+    "Tier 1 Discovery": {
+        "bg": "#0d47a1",
+        "emoji": "🔍",
+        "accent": "#1976d2"
+    },
+    "First Call Scheduled": {
+        "bg": "#e65100",
+        "emoji": "📞",
+        "accent": "#ff6f00"
+    },
+    "Pilot Discussion": {
+        "bg": "#1b5e20",
+        "emoji": "💬",
+        "accent": "#2e7d32"
+    },
+    "Pilot Agreement": {
+        "bg": "#880e4f",
+        "emoji": "📋",
+        "accent": "#c2185b"
+    },
+    "Deployment": {
+        "bg": "#4a148c",
+        "emoji": "🚀",
+        "accent": "#7b1fa2"
+    },
+    "Results": {
+        "bg": "#5d4037",
+        "emoji": "✅",
+        "accent": "#795548"
+    }
 }
 
 st.markdown("---")
 
 # ============================================================================
-# KANBAN CARDS - SIMPLIFIED WITH BUTTONS INSIDE
+# KANBAN CARDS
 # ============================================================================
 
 columns = st.columns(6)
+
 for col, stage in zip(columns, st.session_state.data.keys()):
     with col:
-        # Styled stage header
         style = stage_styles.get(stage, {})
         bg_color = style.get("bg", "#333")
         emoji = style.get("emoji", "")
-        
+        accent = style.get("accent", bg_color)
+
         header_html = f"""
-        <div style="background: linear-gradient(135deg, {bg_color} 0%, {style.get('accent', bg_color)} 100%); 
-                    padding: 12px; border-radius: 8px 8px 0 0; margin-bottom: 12px; text-align: center;">
-            <h3 style="margin: 0; color: white; font-size: 16px;">
+        <div style="
+            background: linear-gradient(135deg, {bg_color} 0%, {accent} 100%);
+            padding: 12px;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 12px;
+            text-align: center;
+        ">
+            <h3 style="
+                margin: 0;
+                color: white;
+                font-size: 16px;
+            ">
                 {emoji} {stage}
             </h3>
-            <div style="color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 4px;">
+            <div style="
+                color: rgba(255,255,255,0.8);
+                font-size: 12px;
+                margin-top: 4px;
+            ">
                 {len(st.session_state.data[stage])} cards
             </div>
         </div>
         """
+
         st.markdown(header_html, unsafe_allow_html=True)
-        
-        # Sort cards by track priority (Quick Win first, then Regional Powerhouse, etc.)
+
         sorted_cards = sorted(
             enumerate(st.session_state.data[stage]),
             key=lambda x: get_track_priority(x[1])
         )
-        
+
         for display_idx, (actual_idx, card) in enumerate(sorted_cards):
-            
             with st.container(border=True):
-                # Card content
                 st.write(f"**{card['community_name']}**")
                 st.caption(f"Last Contact: {card['last_contact']}")
-                
-                # First 5 words of next step
-                next_step_preview = get_first_n_words(card.get('next_step', ''), 5)
+
+                next_step_preview = get_first_n_words(card.get("next_step", ""), 5)
+
                 if next_step_preview:
                     st.caption(f"📋 {next_step_preview}")
-                
-                # Prioritization Track instead of tier
-                if card.get('prioritization_track'):
+
+                if card.get("prioritization_track"):
                     st.caption(f"Track: {card['prioritization_track']}")
-                
-                # Action buttons - VISIBLE
+
                 st.markdown("---")
+
                 button_cols = st.columns([0.5, 1, 1, 1, 0.5])
-                
+
                 with button_cols[0]:
                     stages_list = list(st.session_state.data.keys())
                     idx = stages_list.index(stage)
+
                     if idx > 0:
-                        if st.button("←", key=f"prev_{card['id']}", help="Previous stage", use_container_width=True):
+                        if st.button(
+                            "←",
+                            key=f"prev_{card['id']}",
+                            help="Previous stage",
+                            use_container_width=True
+                        ):
                             move_card(card["id"], stage, stages_list[idx - 1])
                             st.rerun()
-                
+
                 with button_cols[1]:
-                    if st.button("📋 View", key=f"view_{card['id']}", help="View details", use_container_width=True):
-                        st.session_state.selected_card_id = card['id']
+                    if st.button(
+                        "📋 View",
+                        key=f"view_{card['id']}",
+                        help="View details",
+                        use_container_width=True
+                    ):
+                        st.session_state.selected_card_id = card["id"]
                         st.rerun()
-                
+
                 with button_cols[2]:
-                    if st.button("🗑️ Delete", key=f"del_{card['id']}", help="Delete", use_container_width=True):
+                    if st.button(
+                        "🗑️ Delete",
+                        key=f"del_{card['id']}",
+                        help="Delete",
+                        use_container_width=True
+                    ):
                         delete_card(card["id"])
                         st.rerun()
-                
+
                 with button_cols[3]:
                     stages_list = list(st.session_state.data.keys())
                     idx = stages_list.index(stage)
-                    if idx < 5:
-                        if st.button("→", key=f"next_{card['id']}", help="Next stage", use_container_width=True):
+
+                    if idx < len(stages_list) - 1:
+                        if st.button(
+                            "→",
+                            key=f"next_{card['id']}",
+                            help="Next stage",
+                            use_container_width=True
+                        ):
                             move_card(card["id"], stage, stages_list[idx + 1])
                             st.rerun()
-                
-                # Up/Down buttons row
+
                 st.markdown("")
+
                 up_down_cols = st.columns([1, 1, 1])
-                
+
                 with up_down_cols[0]:
                     if display_idx > 0:
-                        if st.button("⬆️ Up", key=f"up_{card['id']}", help="Move up", use_container_width=True):
+                        if st.button(
+                            "⬆️ Up",
+                            key=f"up_{card['id']}",
+                            help="Move up",
+                            use_container_width=True
+                        ):
                             move_card_within_stage(card["id"], stage, "up")
                             st.rerun()
-                
+
                 with up_down_cols[2]:
                     if display_idx < len(sorted_cards) - 1:
-                        if st.button("⬇️ Down", key=f"down_{card['id']}", help="Move down", use_container_width=True):
+                        if st.button(
+                            "⬇️ Down",
+                            key=f"down_{card['id']}",
+                            help="Move down",
+                            use_container_width=True
+                        ):
                             move_card_within_stage(card["id"], stage, "down")
                             st.rerun()
 
