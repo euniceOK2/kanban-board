@@ -41,22 +41,22 @@ def get_first_n_words(text, n=5):
     return " ".join(words[:n]) + ("..." if len(words) > n else "")
 
 def get_border_color(last_contact):
-    """Determine border color based on days since last contact"""
+    """Determine text color and styling based on days since last contact"""
     if last_contact == "Did not reach out yet":
-        return "#555555"  # Gray default
+        return "#999", False  # Gray, not bold
     
     try:
         last_date = datetime.strptime(last_contact, "%Y-%m-%d")
         days_ago = (datetime.now() - last_date).days
         
         if days_ago > 9:
-            return "#ff2c2c"  # Red
+            return "#ff2c2c", True  # Red, bold
         elif days_ago > 5:
-            return "#50C878"  # Green
+            return "#50C878", True  # Green, bold
         else:
-            return "#555555"  # Gray default
+            return "#999", False  # Gray, not bold
     except:
-        return "#555555"  # Gray default
+        return "#999", False  # Gray, not bold
 
 def get_days_since_contact(last_contact):
     """Calculate days since last contact for sorting"""
@@ -480,14 +480,15 @@ for col, stage in zip(columns, st.session_state.data.keys()):
         )
         
         for display_idx, (actual_idx, card) in enumerate(sorted_cards):
-            # Determine border color based on last contact
-            border_color = get_border_color(card['last_contact'])
+            # Determine text color and bold styling for last contact date
+            text_color, is_bold = get_border_color(card['last_contact'])
+            bold_style = "font-weight: bold;" if is_bold else ""
             
-            # Custom card with conditional border
+            # Custom card with styled last contact date
             card_html = f"""
-            <div style="border: 2px solid {border_color}; border-radius: 8px; padding: 15px; margin-bottom: 12px;">
+            <div style="border: 2px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 12px;">
                 <div style="color: white; font-weight: bold; margin-bottom: 8px;">{card['community_name']}</div>
-                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">Last Contact: {card['last_contact']}</div>
+                <div style="color: {text_color}; font-size: 12px; margin-bottom: 6px; {bold_style}">Last Contact: {card['last_contact']}</div>
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
