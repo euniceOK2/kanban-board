@@ -40,6 +40,36 @@ def get_first_n_words(text, n=5):
     words = str(text).split()
     return " ".join(words[:n]) + ("..." if len(words) > n else "")
 
+def get_border_color(last_contact):
+    """Determine border color based on days since last contact"""
+    if last_contact == "Did not reach out yet":
+        return "#555555"  # Gray default
+    
+    try:
+        last_date = datetime.strptime(last_contact, "%Y-%m-%d")
+        days_ago = (datetime.now() - last_date).days
+        
+        if days_ago > 9:
+            return "#ff2c2c"  # Red
+        elif days_ago > 5:
+            return "#50C878"  # Green
+        else:
+            return "#555555"  # Gray default
+    except:
+        return "#555555"  # Gray default
+
+def get_days_since_contact(last_contact):
+    """Calculate days since last contact for sorting"""
+    if last_contact == "Did not reach out yet":
+        return 999  # Put at top (highest days)
+    
+    try:
+        last_date = datetime.strptime(last_contact, "%Y-%m-%d")
+        days_ago = (datetime.now() - last_date).days
+        return days_ago
+    except:
+        return 0
+
 st.set_page_config(page_title="ED Sales Pipeline Kanban", layout="wide")
 st.title("🏥 ED Sales Pipeline Kanban")
 
@@ -93,7 +123,7 @@ def delete_card(card_id):
 def add_card(**kwargs):
     new_card = {
         "id": get_next_id(st.session_state.data),
-        "last_contact": datetime.now().strftime("%Y-%m-%d"),
+        "last_contact": "Did not reach out yet",
     }
     new_card.update(kwargs)
     st.session_state.data[kwargs.get("stage", "Discovery")].append(new_card)
@@ -443,66 +473,73 @@ for col, stage in zip(columns, st.session_state.data.keys()):
         """
         st.markdown(header_html, unsafe_allow_html=True)
         
-        # Sort cards by track priority (Quick Win first, then Regional Powerhouse, etc.)
+        # Sort cards by track priority first, then by days since last contact (longest first)
         sorted_cards = sorted(
             enumerate(st.session_state.data[stage]),
-            key=lambda x: get_track_priority(x[1])
+            key=lambda x: (get_track_priority(x[1]), -get_days_since_contact(x[1]['last_contact']))
         )
         
         for display_idx, (actual_idx, card) in enumerate(sorted_cards):
+            # Determine border color based on last contact
+            border_color = get_border_color(card['last_contact'])
             
-            with st.container(border=True):
-                # Card content
-                st.write(f"**{card['community_name']}**")
-                st.caption(f"Last Contact: {card['last_contact']}")
-                
-                # First 5 words of next step
-                next_step_preview = get_first_n_words(card.get('next_step', ''), 5)
-                if next_step_preview:
-                    st.caption(f"📋 {next_step_preview}")
-                
-                # Prioritization Track instead of tier
-                if card.get('prioritization_track'):
-                    st.caption(f"Track: {card['prioritization_track']}")
-                
-                # All action buttons on one row
-                st.markdown("---")
-                button_cols = st.columns([0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-                
-                with button_cols[0]:
-                    stages_list = list(st.session_state.data.keys())
-                    idx = stages_list.index(stage)
-                    if idx > 0:
-                        if st.button("←", key=f"prev_{card['id']}", help="Previous stage", use_container_width=True):
-                            move_card(card["id"], stage, stages_list[idx - 1])
-                            st.rerun()
-                
-                with button_cols[1]:
-                    if display_idx > 0:
-                        if st.button("⬆️", key=f"up_{card['id']}", help="Move up", use_container_width=True):
-                            move_card_within_stage(card["id"], stage, "up")
-                            st.rerun()
-                
-                with button_cols[2]:
-                    if st.button("📋", key=f"view_{card['id']}", help="View details", use_container_width=True):
-                        st.session_state.selected_card_id = card['id']
+            # Custom card with conditional border
+            card_html = f"""
+            <div style="border: 2px solid {border_color}; border-radius: 8px; padding: 15px; margin-bottom: 12px;">
+                <div style="color: white; font-weight: bold; margin-bottom: 8px;">{card['community_name']}</div>
+                <div style="color: #999; font-size: 12px; margin-bottom: 6px;">Last Contact: {card['last_contact']}</div>
+            </div>
+            """
+            st.markdown(card_html, unsafe_allow_html=True)
+            
+            # Card content and buttons
+            # First 5 words of next step
+            next_step_preview = get_first_n_words(card.get('next_step', ''), 5)
+            if next_step_preview:
+                st.caption(f"📋 {next_step_preview}")
+            
+            # Prioritization Track instead of tier
+            if card.get('prioritization_track'):
+                st.caption(f"Track: {card['prioritization_track']}")
+            
+            # All action buttons on one row
+            st.markdown("---")
+            button_cols = st.columns([0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+            
+            with button_cols[0]:
+                stages_list = list(st.session_state.data.keys())
+                idx = stages_list.index(stage)
+                if idx > 0:
+                    if st.button("←", key=f"prev_{card['id']}", help="Previous stage", use_container_width=True):
+                        move_card(card["id"], stage, stages_list[idx - 1])
                         st.rerun()
-                
-                with button_cols[3]:
-                    if st.button("🗑️", key=f"del_{card['id']}", help="Delete", use_container_width=True):
-                        delete_card(card["id"])
+            
+            with button_cols[1]:
+                if display_idx > 0:
+                    if st.button("⬆️", key=f"up_{card['id']}", help="Move up", use_container_width=True):
+                        move_card_within_stage(card["id"], stage, "up")
                         st.rerun()
-                
-                with button_cols[4]:
-                    if display_idx < len(sorted_cards) - 1:
-                        if st.button("⬇️", key=f"down_{card['id']}", help="Move down", use_container_width=True):
-                            move_card_within_stage(card["id"], stage, "down")
-                            st.rerun()
-                
-                with button_cols[5]:
-                    stages_list = list(st.session_state.data.keys())
-                    idx = stages_list.index(stage)
-                    if idx < 5:
+            
+            with button_cols[2]:
+                if st.button("📋", key=f"view_{card['id']}", help="View details", use_container_width=True):
+                    st.session_state.selected_card_id = card['id']
+                    st.rerun()
+            
+            with button_cols[3]:
+                if st.button("🗑️", key=f"del_{card['id']}", help="Delete", use_container_width=True):
+                    delete_card(card["id"])
+                    st.rerun()
+            
+            with button_cols[4]:
+                if display_idx < len(sorted_cards) - 1:
+                    if st.button("⬇️", key=f"down_{card['id']}", help="Move down", use_container_width=True):
+                        move_card_within_stage(card["id"], stage, "down")
+                        st.rerun()
+            
+            with button_cols[5]:
+                stages_list = list(st.session_state.data.keys())
+                idx = stages_list.index(stage)
+                if idx < 5:
                         if st.button("→", key=f"next_{card['id']}", help="Next stage", use_container_width=True):
                             move_card(card["id"], stage, stages_list[idx + 1])
                             st.rerun()
