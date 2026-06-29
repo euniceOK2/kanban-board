@@ -96,6 +96,7 @@ def move_card(card_id, from_stage, to_stage):
         card = st.session_state.data[from_stage].pop(from_idx)
         st.session_state.data[to_stage].append(card)
         save_data(st.session_state.data)
+        st.session_state.data = load_data()
 
 def move_card_within_stage(card_id, stage, direction):
     """Move card up or down within the same stage"""
@@ -110,15 +111,18 @@ def move_card_within_stage(card_id, stage, direction):
         if direction == "up" and idx > 0:
             cards[idx], cards[idx-1] = cards[idx-1], cards[idx]
             save_data(st.session_state.data)
+            st.session_state.data = load_data()
         elif direction == "down" and idx < len(cards) - 1:
             cards[idx], cards[idx+1] = cards[idx+1], cards[idx]
             save_data(st.session_state.data)
+            st.session_state.data = load_data()
 
 def delete_card(card_id):
     stage, idx, _ = find_card(card_id)
     if stage is not None:
         st.session_state.data[stage].pop(idx)
         save_data(st.session_state.data)
+        st.session_state.data = load_data()
 
 def add_card(**kwargs):
     new_card = {
@@ -128,6 +132,7 @@ def add_card(**kwargs):
     new_card.update(kwargs)
     st.session_state.data[kwargs.get("stage", "Discovery")].append(new_card)
     save_data(st.session_state.data)
+    st.session_state.data = load_data()
 
 # ============================================================================
 # MODAL DISPLAY (at top, before cards)
@@ -235,6 +240,8 @@ if st.session_state.selected_card_id is not None:
                 if idx_card is not None:
                     st.session_state.data[stage_name][idx_card]['last_contact'] = new_last_contact
                     save_data(st.session_state.data)
+                    # Reload data from JSON to sync session state
+                    st.session_state.data = load_data()
                     st.session_state.selected_card_id = None
                     st.success(f"✅ Set to {new_last_contact}")
                     st.rerun()
@@ -250,6 +257,9 @@ if st.session_state.selected_card_id is not None:
                 if idx_card is not None:
                     st.session_state.data[stage_name][idx_card]['last_contact'] = "Did not reach out yet"
                     save_data(st.session_state.data)
+                    # Reload data from JSON to sync session state
+                    st.session_state.data = load_data()
+                    st.session_state.selected_card_id = None
                     st.success("✅ Cleared!")
                     st.rerun()
         
@@ -338,6 +348,7 @@ if uploaded_file is not None:
         
         if cards_added > 0:
             st.success(f"✅ {cards_added} cards imported!")
+            st.rerun()
         if errors:
             with st.expander(f"⚠️ {len(errors)} errors"):
                 for error in errors:
