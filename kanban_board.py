@@ -399,17 +399,13 @@ with st.expander("➕ Add New Card Manually"):
             st.error("Community Name and Executive 1 Name are required")
 
 st.markdown("---")
-st.subheader("📊 Pipeline Overview")
+st.subheader("Pipeline")
 
 cols = st.columns(6)
 for col, stage_name in zip(cols, st.session_state.data.keys()):
     with col:
-        stage_style = stage_styles.get(stage_name, {})
-        emoji = stage_style.get("emoji", "")
         card_count = len(st.session_state.data[stage_name])
-        
-        # Display count with stage emoji
-        col.metric(f"{emoji} {stage_name}", card_count)
+        st.metric(stage_name, card_count)
 
 # Track priority for sorting (higher number = higher priority = appears first)
 track_priority = {
