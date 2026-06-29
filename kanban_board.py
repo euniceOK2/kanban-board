@@ -102,58 +102,41 @@ if st.session_state.selected_card_id is not None:
     stage, idx, card = find_card(st.session_state.selected_card_id)
     
     if card:
-        # Top detail card with styled border
-        modal_html = f"""
-        <div style="border: 2px solid #7c3aed; border-radius: 12px; padding: 24px; margin-bottom: 24px; background: rgba(124, 58, 237, 0.05);">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
-                <div>
-                    <h2 style="margin: 0 0 8px 0; color: white; font-size: 24px;">🏢 {card['community_name']}</h2>
-                </div>
-                <div>
-                    {"" if True else ""}
-                </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                <!-- Stage -->
-                <div>
-                    <div style="color: #a0aec0; font-size: 12px; margin-bottom: 4px;">📋 STAGE</div>
-                    <div style="color: white; font-size: 14px; font-weight: 500;">{card['stage']}</div>
-                </div>
-                
-                <!-- Track -->
-                <div>
-                    <div style="color: #a0aec0; font-size: 12px; margin-bottom: 4px;">⭐ TRACK</div>
-                    <div style="color: #fbbf24; font-size: 14px; font-weight: 500;">{card.get('prioritization_track', 'N/A')}</div>
-                </div>
-                
-                <!-- Contract -->
-                <div>
-                    <div style="color: #a0aec0; font-size: 12px; margin-bottom: 4px;">📋 CONTRACT TYPE</div>
-                    <div style="color: white; font-size: 14px; font-weight: 500;">{card.get('contract_structure', 'N/A')}</div>
-                </div>
-            </div>
-            
-            <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 16px 0;">
-            
-            <!-- Location & Contact -->
-            <div style="margin-bottom: 16px;">
-                <div style="color: #a0aec0; font-size: 12px; margin-bottom: 8px;">📍 LOCATION & CONTACT</div>
-                <div style="color: #cbd5e1; font-size: 13px; line-height: 1.6;">
-                    {card.get('city', 'N/A')}, {card.get('state', 'N/A')}<br>
-                    📞 {card.get('phone', 'N/A')}<br>
-                    {f"📧 <a href='mailto:{card.get('website', '')}' style='color: #7c3aed;'>{card.get('website', '')}</a>" if card.get('website') else ""}
-                </div>
-            </div>
-        </div>
-        """
-        st.markdown(modal_html, unsafe_allow_html=True)
-        
-        col_close = st.columns([11, 1])
-        with col_close[1]:
-            if st.button("✕ Close", key="close_modal"):
+        # Header with close button
+        col_title, col_close = st.columns([11, 1])
+        with col_title:
+            st.markdown(f"### 🏢 {card['community_name']}")
+        with col_close:
+            if st.button("✕", key="close_modal", help="Close"):
                 st.session_state.selected_card_id = None
                 st.rerun()
+        
+        # Detail info in columns
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("**📋 STAGE**")
+            st.markdown(f"`{card['stage']}`")
+        with col2:
+            st.markdown("**⭐ TRACK**")
+            st.markdown(f"`{card.get('prioritization_track', 'N/A')}`")
+        with col3:
+            st.markdown("**📋 CONTRACT TYPE**")
+            st.markdown(f"`{card.get('contract_structure', 'N/A')}`")
+        
+        st.divider()
+        
+        # Location info
+        st.markdown("**📍 LOCATION & CONTACT**")
+        loc_col1, loc_col2, loc_col3 = st.columns(3)
+        with loc_col1:
+            st.write(f"**City, State:** {card.get('city', 'N/A')}, {card.get('state', 'N/A')}")
+        with loc_col2:
+            st.write(f"**Phone:** {card.get('phone', 'N/A')}")
+        with loc_col3:
+            if card.get('website'):
+                st.write(f"**Website:** [{card.get('website')}]({card.get('website')})")
+        
+        st.divider()
         
         # Strategy section
         with st.expander("📊 Strategy", expanded=True):
