@@ -222,15 +222,15 @@ if st.session_state.selected_card_id is not None:
         current_last_contact = card.get('last_contact', 'Did not reach out yet')
         st.write(f"**Current:** {current_last_contact}")
         
-        col1, col2, col3 = st.columns(3)
+        # Simple date picker - outside columns to avoid scope issues
+        selected_date = st.date_input("Select Last Contact Date", key="contact_date_picker")
+        new_last_contact = selected_date.strftime("%Y-%m-%d")
+        st.info(f"Will save: **{new_last_contact}**")
+        
+        # Buttons in columns
+        col1, col2 = st.columns(2)
         
         with col1:
-            # Simple date picker
-            selected_date = st.date_input("Select Last Contact Date", key="contact_date_picker")
-            new_last_contact = selected_date.strftime("%Y-%m-%d")
-            st.info(f"Will save: **{new_last_contact}**")
-        
-        with col2:
             if st.button("Set Date", key="set_date_btn"):
                 stage_name, _, _ = find_card(st.session_state.selected_card_id)
                 idx_card = None
@@ -247,7 +247,7 @@ if st.session_state.selected_card_id is not None:
                     st.success(f"✅ Set to {new_last_contact}")
                     st.rerun()
         
-        with col3:
+        with col2:
             if st.button("Clear", key="clear_date_btn"):
                 stage_name, _, _ = find_card(st.session_state.selected_card_id)
                 idx_card = None
