@@ -228,6 +228,7 @@ if st.session_state.selected_card_id is not None:
             # Simple date picker
             selected_date = st.date_input("Select Last Contact Date", key="contact_date_picker")
             new_last_contact = selected_date.strftime("%Y-%m-%d")
+            st.info(f"Will save: **{new_last_contact}**")
         
         with col2:
             if st.button("Set Date", key="set_date_btn"):
