@@ -233,13 +233,10 @@ if st.session_state.selected_card_id is not None:
                         idx_card = i
                         break
                 if idx_card is not None:
-                    st.write(f"DEBUG: Saving date '{new_last_contact}' for card ID {st.session_state.selected_card_id}")
                     st.session_state.data[stage_name][idx_card]['last_contact'] = new_last_contact
                     save_data(st.session_state.data)
-                    st.write(f"DEBUG: Saved! Card now has: {st.session_state.data[stage_name][idx_card]['last_contact']}")
+                    st.session_state.selected_card_id = None
                     st.success(f"✅ Set to {new_last_contact}")
-                    import time
-                    time.sleep(2)
                     st.rerun()
         
         with col3:
@@ -256,24 +253,7 @@ if st.session_state.selected_card_id is not None:
                     st.success("✅ Cleared!")
                     st.rerun()
         
-        st.markdown("---")
-        
-        # Save button for both next step and last contact
-        if st.button("Save All Changes", key="save_all"):
-            stage_name, _, _ = find_card(st.session_state.selected_card_id)
-            idx_card = None
-            for i, c in enumerate(st.session_state.data[stage_name]):
-                if c["id"] == st.session_state.selected_card_id:
-                    idx_card = i
-                    break
-            if idx_card is not None:
-                st.session_state.data[stage_name][idx_card]['next_step'] = new_next_step
-                st.session_state.data[stage_name][idx_card]['last_contact'] = new_last_contact
-                save_data(st.session_state.data)
-                st.success("✅ Changes saved!")
-                # Close modal to see updated card
-                st.session_state.selected_card_id = None
-                st.rerun()
+
 
 # ============================================================================
 # FILE UPLOAD
