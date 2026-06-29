@@ -214,26 +214,36 @@ if st.session_state.selected_card_id is not None:
         st.markdown("---")
         st.subheader("📅 Last Contact")
         
-        # Last Contact input
         current_last_contact = card.get('last_contact', 'Did not reach out yet')
-        new_last_contact = current_last_contact  # Initialize with current value
+        st.write(f"**Current:** {current_last_contact}")
         
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
+        
         with col1:
-            # If current is a date, allow date picker; otherwise show text with option to set date
-            if current_last_contact != "Did not reach out yet":
-                try:
-                    last_contact_date = datetime.strptime(current_last_contact, "%Y-%m-%d").date()
-                    new_last_contact_date = st.date_input("Set Last Contact Date", value=last_contact_date, key="last_contact_date")
-                    new_last_contact = new_last_contact_date.strftime("%Y-%m-%d")
-                except:
-                    new_last_contact = st.text_input("Last Contact Date (YYYY-MM-DD)", value=current_last_contact, key="last_contact_text")
-            else:
-                new_last_contact_date = st.date_input("Set Last Contact Date", value=datetime.now().date(), key="last_contact_date_new")
-                new_last_contact = new_last_contact_date.strftime("%Y-%m-%d")
+            # Simple date picker
+            selected_date = st.date_input("Select Last Contact Date", key="contact_date_picker")
+            new_last_contact = selected_date.strftime("%Y-%m-%d")
         
         with col2:
-            if st.button("Clear (Not reached out yet)", key="clear_last_contact"):
+            if st.button("Set Date", key="set_date_btn"):
+                stage_name, _, _ = find_card(st.session_state.selected_card_id)
+                idx_card = None
+                for i, c in enumerate(st.session_state.data[stage_name]):
+                    if c["id"] == st.session_state.selected_card_id:
+                        idx_card = i
+                        break
+                if idx_card is not None:
+                    st.write(f"DEBUG: Saving date '{new_last_contact}' for card ID {st.session_state.selected_card_id}")
+                    st.session_state.data[stage_name][idx_card]['last_contact'] = new_last_contact
+                    save_data(st.session_state.data)
+                    st.write(f"DEBUG: Saved! Card now has: {st.session_state.data[stage_name][idx_card]['last_contact']}")
+                    st.success(f"✅ Set to {new_last_contact}")
+                    import time
+                    time.sleep(2)
+                    st.rerun()
+        
+        with col3:
+            if st.button("Clear", key="clear_date_btn"):
                 stage_name, _, _ = find_card(st.session_state.selected_card_id)
                 idx_card = None
                 for i, c in enumerate(st.session_state.data[stage_name]):
