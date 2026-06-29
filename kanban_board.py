@@ -5,8 +5,10 @@ import csv
 from io import StringIO
 from datetime import datetime
 from html import escape
+from textwrap import dedent
 
 DATA_FILE = "kanban_data.json"
+
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -21,20 +23,30 @@ def load_data():
         "Results": []
     }
 
+
 def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=2)
+
 
 def get_next_id(data):
     all_cards = [card for stage_cards in data.values() for card in stage_cards]
     return max((card["id"] for card in all_cards), default=0) + 1
 
+
 def word_count(text):
     return len(str(text).split())
+
 
 def get_first_n_words(text, n=5):
     words = str(text).split()
     return " ".join(words[:n]) + ("..." if len(words) > n else "")
+
+
+def clean_html(html: str) -> str:
+    """Remove leading indentation so Streamlit renders HTML instead of a code block."""
+    return dedent(html).strip()
+
 
 def display_value(value, default="N/A"):
     """Escape values before placing them inside custom HTML."""
@@ -42,6 +54,7 @@ def display_value(value, default="N/A"):
         return default
     value = str(value).strip()
     return escape(value) if value else default
+
 
 def make_url(value):
     """Return a safe URL for website links."""
@@ -54,12 +67,14 @@ def make_url(value):
         url = "https://" + url
     return escape(url, quote=True)
 
+
 def make_email_link(email):
     email = "" if email is None else str(email).strip()
     if not email:
         return "N/A"
     safe_email = escape(email)
     return f'<a href="mailto:{safe_email}">{safe_email}</a>'
+
 
 def render_exec_contact(label, name, email, leverage, muted=False):
     name_text = display_value(name, "")
@@ -71,21 +86,22 @@ def render_exec_contact(label, name, email, leverage, muted=False):
 
     if str(leverage or "").strip():
         leverage_html = f"""
-            <div class="exec-leverage-label">Profile &amp; Leverage Angle:</div>
-            <div class="exec-leverage">{display_value(leverage)}</div>
+        <div class="exec-leverage-label">Profile &amp; Leverage Angle:</div>
+        <div class="exec-leverage">{display_value(leverage)}</div>
         """
 
     return f"""
-        <div class="exec-row{muted_class}">
-            <div class="exec-icon">✉</div>
-            <div class="exec-body">
-                <div class="exec-title">{display_value(label)}: {name_text}</div>
-                <div class="exec-email">{make_email_link(email)}</div>
-                {leverage_html}
-            </div>
-            <div class="exec-chevron">⌄</div>
+    <div class="exec-row{muted_class}">
+        <div class="exec-icon">✉</div>
+        <div class="exec-body">
+            <div class="exec-title">{display_value(label)}: {name_text}</div>
+            <div class="exec-email">{make_email_link(email)}</div>
+            {leverage_html}
         </div>
+        <div class="exec-chevron">⌄</div>
+    </div>
     """
+
 
 def render_company_detail_html(card):
     website_url = make_url(card.get("website"))
@@ -119,157 +135,157 @@ def render_company_detail_html(card):
     foundation_html = ""
 
     if str(card.get("foundation_name", "")).strip():
+        foundation_leverage_html = ""
+        if str(card.get("foundation_leverage", "")).strip():
+            foundation_leverage_html = f"""
+            <div class="foundation-leverage">
+                <strong>Strategic Leverage Angle:</strong><br>
+                {display_value(card.get("foundation_leverage"))}
+            </div>
+            """
+
         foundation_html = f"""
-            <details class="company-accordion">
-                <summary>
-                    <span><span class="section-icon">🏛</span> Foundation</span>
-                    <span class="summary-caret">⌄</span>
-                </summary>
+        <details class="company-accordion">
+            <summary>
+                <span><span class="section-icon">🏛</span> Foundation</span>
+                <span class="summary-caret">⌄</span>
+            </summary>
 
-                <div class="foundation-row">
-                    <div>
-                        <div class="micro-label">Foundation</div>
-                        <strong>{display_value(card.get("foundation_name"))}</strong>
-                    </div>
-                    <div>
-                        <div class="micro-label">Leader</div>
-                        <strong>{display_value(card.get("foundation_leader"))}</strong>
-                    </div>
-                    <div>
-                        <div class="micro-label">Email</div>
-                        {make_email_link(card.get("foundation_email"))}
-                    </div>
-                </div>
-
-                {
-                    "<div class='foundation-leverage'><strong>Strategic Leverage Angle:</strong><br>"
-                    + display_value(card.get("foundation_leverage"))
-                    + "</div>"
-                    if str(card.get("foundation_leverage", "")).strip()
-                    else ""
-                }
-            </details>
-        """
-
-    return f"""
-    <div class="company-shell">
-        <div class="company-glow"></div>
-
-        <div class="company-header-row">
-            <div class="company-identity">
-                <div class="company-avatar">🏢</div>
+            <div class="foundation-row">
                 <div>
-                    <div class="company-eyebrow">Selected account</div>
-                    <h2>{display_value(card.get("community_name"))}</h2>
+                    <div class="micro-label">Foundation</div>
+                    <strong>{display_value(card.get("foundation_name"))}</strong>
+                </div>
+                <div>
+                    <div class="micro-label">Leader</div>
+                    <strong>{display_value(card.get("foundation_leader"))}</strong>
+                </div>
+                <div>
+                    <div class="micro-label">Email</div>
+                    {make_email_link(card.get("foundation_email"))}
                 </div>
             </div>
+            {foundation_leverage_html}
+        </details>
+        """
 
-            <div class="quickwin-pill">
-                <div class="micro-label">Strategy Track</div>
+    return clean_html(f"""
+<div class="company-shell">
+    <div class="company-header-row">
+        <div class="company-identity">
+            <div class="company-avatar">🏢</div>
+            <div>
+                <div class="company-eyebrow">Selected account</div>
+                <h2>{display_value(card.get("community_name"))}</h2>
+            </div>
+        </div>
+
+        <div class="quickwin-pill">
+            <div class="micro-label">Strategy Track</div>
+            <strong>{display_value(card.get("prioritization_track"))}</strong>
+        </div>
+    </div>
+
+    <div class="company-metric-grid">
+        <div class="metric-item">
+            <div class="metric-icon">▰</div>
+            <div>
+                <div class="micro-label">Stage</div>
+                <strong>{display_value(card.get("stage"))}</strong>
+            </div>
+        </div>
+
+        <div class="metric-item">
+            <div class="metric-icon">★</div>
+            <div>
+                <div class="micro-label">Prioritization Track</div>
                 <strong>{display_value(card.get("prioritization_track"))}</strong>
             </div>
         </div>
 
-        <div class="company-metric-grid">
-            <div class="metric-item">
-                <div class="metric-icon">▰</div>
-                <div>
-                    <div class="micro-label">Stage</div>
-                    <strong>{display_value(card.get("stage"))}</strong>
-                </div>
-            </div>
-
-            <div class="metric-item">
-                <div class="metric-icon">★</div>
-                <div>
-                    <div class="micro-label">Prioritization Track</div>
-                    <strong>{display_value(card.get("prioritization_track"))}</strong>
-                </div>
-            </div>
-
-            <div class="metric-item">
-                <div class="metric-icon">📍</div>
-                <div>
-                    <div class="micro-label">Location &amp; Contact</div>
-                    <strong>{display_value(card.get("city"))}, {display_value(card.get("state"))}</strong>
-                    <div class="metric-sub">{display_value(card.get("phone"))}</div>
-                    <div class="metric-sub">{website_html}</div>
-                </div>
-            </div>
-
-            <div class="metric-item">
-                <div class="metric-icon">▣</div>
-                <div>
-                    <div class="micro-label">Contract Type</div>
-                    <strong>{display_value(card.get("contract_structure"))}</strong>
-                </div>
+        <div class="metric-item">
+            <div class="metric-icon">📍</div>
+            <div>
+                <div class="micro-label">Location &amp; Contact</div>
+                <strong>{display_value(card.get("city"))}, {display_value(card.get("state"))}</strong>
+                <div class="metric-sub">{display_value(card.get("phone"))}</div>
+                <div class="metric-sub">{website_html}</div>
             </div>
         </div>
 
-        <details class="company-accordion" open>
-            <summary>
-                <span><span class="section-icon">📊</span> Strategy</span>
-                <span class="summary-caret">⌄</span>
-            </summary>
-
-            <div class="strategy-strip">
-                <div>
-                    <span>Track</span>
-                    <strong>{display_value(card.get("prioritization_track"))}</strong>
-                </div>
-                <div>
-                    <span>Contract</span>
-                    <strong>{display_value(card.get("contract_structure"))}</strong>
-                </div>
-                <div>
-                    <span>Address</span>
-                    <strong>{display_value(card.get("street_address"))}</strong>
-                </div>
+        <div class="metric-item">
+            <div class="metric-icon">▣</div>
+            <div>
+                <div class="micro-label">Contract Type</div>
+                <strong>{display_value(card.get("contract_structure"))}</strong>
             </div>
-        </details>
-
-        <details class="company-accordion" open>
-            <summary>
-                <span><span class="section-icon">👥</span> Executive Contacts</span>
-                <span class="summary-caret">⌃</span>
-            </summary>
-
-            <div class="exec-list">
-                {exec_html if exec_html.strip() else "<div class='empty-state'>No executive contacts yet.</div>"}
-            </div>
-        </details>
-
-        {foundation_html}
-
-        <div class="nextstep-shell">
-            <div class="nextstep-title"><span class="section-icon">✏️</span> Update Next Step</div>
-            <div class="nextstep-note">Use the field below to update the next action for this account.</div>
         </div>
     </div>
-    """
+
+    <details class="company-accordion" open>
+        <summary>
+            <span><span class="section-icon">📊</span> Strategy</span>
+            <span class="summary-caret">⌄</span>
+        </summary>
+
+        <div class="strategy-strip">
+            <div>
+                <span>Track</span>
+                <strong>{display_value(card.get("prioritization_track"))}</strong>
+            </div>
+            <div>
+                <span>Contract</span>
+                <strong>{display_value(card.get("contract_structure"))}</strong>
+            </div>
+            <div>
+                <span>Address</span>
+                <strong>{display_value(card.get("street_address"))}</strong>
+            </div>
+        </div>
+    </details>
+
+    <details class="company-accordion" open>
+        <summary>
+            <span><span class="section-icon">👥</span> Executive Contacts</span>
+            <span class="summary-caret">⌃</span>
+        </summary>
+
+        <div class="exec-list">
+            {exec_html if exec_html.strip() else "<div class='empty-state'>No executive contacts yet.</div>"}
+        </div>
+    </details>
+
+    {foundation_html}
+
+    <div class="nextstep-shell">
+        <div class="nextstep-title"><span class="section-icon">✏️</span> Update Next Step</div>
+        <div class="nextstep-note">Use the field below to update the next action for this account.</div>
+    </div>
+</div>
+""")
+
 
 st.set_page_config(page_title="ED Sales Pipeline Kanban", layout="wide")
 st.title("🏥 ED Sales Pipeline Kanban")
 
-st.markdown("""
+st.markdown(clean_html("""
 <style>
 /* ==========================================================================
-   Account detail block redesign
+   Selected account detail block
    ========================================================================== */
-
 .company-shell {
     position: relative;
-    border: 1px solid rgba(168, 85, 247, 0.90);
+    border: 1px solid rgba(168, 85, 247, 0.95);
     box-shadow:
-        0 0 0 1px rgba(168, 85, 247, 0.20) inset,
-        0 0 24px rgba(168, 85, 247, 0.28),
-        0 18px 60px rgba(0, 0, 0, 0.35);
+        0 0 0 1px rgba(168, 85, 247, 0.18) inset,
+        0 0 28px rgba(168, 85, 247, 0.30),
+        0 20px 70px rgba(0, 0, 0, 0.40);
     border-radius: 18px;
     padding: 28px;
     margin: 18px 0 14px 0;
     background:
-        radial-gradient(circle at 12% 0%, rgba(124, 58, 237, 0.20), transparent 32%),
-        linear-gradient(135deg, rgba(20, 23, 36, 0.98), rgba(10, 14, 25, 0.98));
+        radial-gradient(circle at 12% 0%, rgba(124, 58, 237, 0.22), transparent 30%),
+        linear-gradient(135deg, rgba(22, 25, 39, 0.98), rgba(8, 13, 24, 0.98));
     overflow: hidden;
 }
 
@@ -277,7 +293,7 @@ st.markdown("""
     content: "▦";
     position: absolute;
     right: 42px;
-    top: 52px;
+    top: 42px;
     color: rgba(168, 85, 247, 0.08);
     font-size: 118px;
     line-height: 1;
@@ -537,7 +553,7 @@ st.markdown("""
     }
 }
 </style>
-""", unsafe_allow_html=True)
+"""), unsafe_allow_html=True)
 
 if "data" not in st.session_state:
     st.session_state.data = load_data()
@@ -545,12 +561,14 @@ if "data" not in st.session_state:
 if "selected_card_id" not in st.session_state:
     st.session_state.selected_card_id = None
 
+
 def find_card(card_id):
     for stage, cards in st.session_state.data.items():
         for i, card in enumerate(cards):
             if card["id"] == card_id:
                 return stage, i, card
     return None, None, None
+
 
 def move_card(card_id, from_stage, to_stage):
     from_idx = None
@@ -563,6 +581,7 @@ def move_card(card_id, from_stage, to_stage):
         card = st.session_state.data[from_stage].pop(from_idx)
         st.session_state.data[to_stage].append(card)
         save_data(st.session_state.data)
+
 
 def move_card_within_stage(card_id, stage, direction):
     """Move card up or down within the same stage."""
@@ -578,27 +597,27 @@ def move_card_within_stage(card_id, stage, direction):
         if direction == "up" and idx > 0:
             cards[idx], cards[idx - 1] = cards[idx - 1], cards[idx]
             save_data(st.session_state.data)
-
         elif direction == "down" and idx < len(cards) - 1:
             cards[idx], cards[idx + 1] = cards[idx + 1], cards[idx]
             save_data(st.session_state.data)
 
+
 def delete_card(card_id):
     stage, idx, _ = find_card(card_id)
-
     if stage is not None:
         st.session_state.data[stage].pop(idx)
         save_data(st.session_state.data)
+
 
 def add_card(**kwargs):
     new_card = {
         "id": get_next_id(st.session_state.data),
         "last_contact": datetime.now().strftime("%Y-%m-%d"),
     }
-
     new_card.update(kwargs)
     st.session_state.data[kwargs.get("stage", "Tier 1 Discovery")].append(new_card)
     save_data(st.session_state.data)
+
 
 # ============================================================================
 # SELECTED ACCOUNT DETAIL BLOCK
@@ -910,10 +929,12 @@ track_priority = {
     "Standard": 3
 }
 
+
 def get_track_priority(card):
     """Get priority value for a card based on its track."""
     track = card.get("prioritization_track", "Standard")
     return track_priority.get(track, 99)
+
 
 # Stage styling.
 stage_styles = {
@@ -964,7 +985,7 @@ for col, stage in zip(columns, st.session_state.data.keys()):
         emoji = style.get("emoji", "")
         accent = style.get("accent", bg_color)
 
-        header_html = f"""
+        header_html = clean_html(f"""
         <div style="
             background: linear-gradient(135deg, {bg_color} 0%, {accent} 100%);
             padding: 12px;
@@ -987,7 +1008,7 @@ for col, stage in zip(columns, st.session_state.data.keys()):
                 {len(st.session_state.data[stage])} cards
             </div>
         </div>
-        """
+        """)
 
         st.markdown(header_html, unsafe_allow_html=True)
 
