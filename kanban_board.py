@@ -540,8 +540,8 @@ for col, stage in zip(columns, st.session_state.data.keys()):
                 stages_list = list(st.session_state.data.keys())
                 idx = stages_list.index(stage)
                 if idx < 5:
-                        if st.button("→", key=f"next_{card['id']}", help="Next stage", use_container_width=True):
-                            move_card(card["id"], stage, stages_list[idx + 1])
-                            st.rerun()
+                    if st.button("→", key=f"next_{card['id']}", help="Next stage", use_container_width=True):
+                        move_card(card["id"], stage, stages_list[idx + 1])
+                        st.rerun()
 
 st.caption(f"Total cards: {sum(len(c) for c in st.session_state.data.values())}")
