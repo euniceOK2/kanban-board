@@ -216,6 +216,7 @@ if st.session_state.selected_card_id is not None:
         
         # Last Contact input
         current_last_contact = card.get('last_contact', 'Did not reach out yet')
+        new_last_contact = current_last_contact  # Initialize with current value
         
         col1, col2 = st.columns(2)
         with col1:
@@ -228,8 +229,8 @@ if st.session_state.selected_card_id is not None:
                 except:
                     new_last_contact = st.text_input("Last Contact Date (YYYY-MM-DD)", value=current_last_contact, key="last_contact_text")
             else:
-                new_last_contact = st.date_input("Set Last Contact Date", value=datetime.now().date(), key="last_contact_date_new")
-                new_last_contact = new_last_contact.strftime("%Y-%m-%d")
+                new_last_contact_date = st.date_input("Set Last Contact Date", value=datetime.now().date(), key="last_contact_date_new")
+                new_last_contact = new_last_contact_date.strftime("%Y-%m-%d")
         
         with col2:
             if st.button("Clear (Not reached out yet)", key="clear_last_contact"):
