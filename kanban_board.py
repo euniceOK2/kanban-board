@@ -259,7 +259,9 @@ if st.session_state.selected_card_id is not None:
                 st.session_state.data[stage_name][idx_card]['next_step'] = new_next_step
                 st.session_state.data[stage_name][idx_card]['last_contact'] = new_last_contact
                 save_data(st.session_state.data)
-                st.success("✅ All changes saved!")
+                st.success("✅ Changes saved!")
+                # Close modal to see updated card
+                st.session_state.selected_card_id = None
                 st.rerun()
 
 # ============================================================================
