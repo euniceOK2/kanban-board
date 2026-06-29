@@ -210,7 +210,45 @@ if st.session_state.selected_card_id is not None:
         st.markdown("---")
         st.subheader("📝 Update Next Step")
         new_next_step = st.text_area("Next Step Notes", value=card.get('next_step', ''), key="edit_next_step")
-        if st.button("Save Next Step", key="save_next_step"):
+        
+        st.markdown("---")
+        st.subheader("📅 Last Contact")
+        
+        # Last Contact input
+        current_last_contact = card.get('last_contact', 'Did not reach out yet')
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            # If current is a date, allow date picker; otherwise show text with option to set date
+            if current_last_contact != "Did not reach out yet":
+                try:
+                    last_contact_date = datetime.strptime(current_last_contact, "%Y-%m-%d").date()
+                    new_last_contact_date = st.date_input("Set Last Contact Date", value=last_contact_date, key="last_contact_date")
+                    new_last_contact = new_last_contact_date.strftime("%Y-%m-%d")
+                except:
+                    new_last_contact = st.text_input("Last Contact Date (YYYY-MM-DD)", value=current_last_contact, key="last_contact_text")
+            else:
+                new_last_contact = st.date_input("Set Last Contact Date", value=datetime.now().date(), key="last_contact_date_new")
+                new_last_contact = new_last_contact.strftime("%Y-%m-%d")
+        
+        with col2:
+            if st.button("Clear (Not reached out yet)", key="clear_last_contact"):
+                stage_name, _, _ = find_card(st.session_state.selected_card_id)
+                idx_card = None
+                for i, c in enumerate(st.session_state.data[stage_name]):
+                    if c["id"] == st.session_state.selected_card_id:
+                        idx_card = i
+                        break
+                if idx_card is not None:
+                    st.session_state.data[stage_name][idx_card]['last_contact'] = "Did not reach out yet"
+                    save_data(st.session_state.data)
+                    st.success("✅ Cleared!")
+                    st.rerun()
+        
+        st.markdown("---")
+        
+        # Save button for both next step and last contact
+        if st.button("Save All Changes", key="save_all"):
             stage_name, _, _ = find_card(st.session_state.selected_card_id)
             idx_card = None
             for i, c in enumerate(st.session_state.data[stage_name]):
@@ -219,11 +257,10 @@ if st.session_state.selected_card_id is not None:
                     break
             if idx_card is not None:
                 st.session_state.data[stage_name][idx_card]['next_step'] = new_next_step
+                st.session_state.data[stage_name][idx_card]['last_contact'] = new_last_contact
                 save_data(st.session_state.data)
-                st.success("✅ Saved!")
+                st.success("✅ All changes saved!")
                 st.rerun()
-        
-        st.markdown("---")
 
 # ============================================================================
 # FILE UPLOAD
