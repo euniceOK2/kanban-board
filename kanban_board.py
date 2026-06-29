@@ -102,82 +102,97 @@ if st.session_state.selected_card_id is not None:
     stage, idx, card = find_card(st.session_state.selected_card_id)
     
     if card:
-        col_title, col_close = st.columns([9, 1])
-        with col_title:
-            st.markdown(f"## 📋 {card['community_name']}")
-        with col_close:
+        # Top detail card with styled border
+        modal_html = f"""
+        <div style="border: 2px solid #7c3aed; border-radius: 12px; padding: 24px; margin-bottom: 24px; background: rgba(124, 58, 237, 0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
+                <div>
+                    <h2 style="margin: 0 0 8px 0; color: white; font-size: 24px;">🏢 {card['community_name']}</h2>
+                </div>
+                <div>
+                    {"" if True else ""}
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <!-- Stage -->
+                <div>
+                    <div style="color: #a0aec0; font-size: 12px; margin-bottom: 4px;">📋 STAGE</div>
+                    <div style="color: white; font-size: 14px; font-weight: 500;">{card['stage']}</div>
+                </div>
+                
+                <!-- Track -->
+                <div>
+                    <div style="color: #a0aec0; font-size: 12px; margin-bottom: 4px;">⭐ TRACK</div>
+                    <div style="color: #fbbf24; font-size: 14px; font-weight: 500;">{card.get('prioritization_track', 'N/A')}</div>
+                </div>
+                
+                <!-- Contract -->
+                <div>
+                    <div style="color: #a0aec0; font-size: 12px; margin-bottom: 4px;">📋 CONTRACT TYPE</div>
+                    <div style="color: white; font-size: 14px; font-weight: 500;">{card.get('contract_structure', 'N/A')}</div>
+                </div>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 16px 0;">
+            
+            <!-- Location & Contact -->
+            <div style="margin-bottom: 16px;">
+                <div style="color: #a0aec0; font-size: 12px; margin-bottom: 8px;">📍 LOCATION & CONTACT</div>
+                <div style="color: #cbd5e1; font-size: 13px; line-height: 1.6;">
+                    {card.get('city', 'N/A')}, {card.get('state', 'N/A')}<br>
+                    📞 {card.get('phone', 'N/A')}<br>
+                    {f"📧 <a href='mailto:{card.get('website', '')}' style='color: #7c3aed;'>{card.get('website', '')}</a>" if card.get('website') else ""}
+                </div>
+            </div>
+        </div>
+        """
+        st.markdown(modal_html, unsafe_allow_html=True)
+        
+        col_close = st.columns([11, 1])
+        with col_close[1]:
             if st.button("✕ Close", key="close_modal"):
                 st.session_state.selected_card_id = None
                 st.rerun()
         
-        # Overview
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Stage", card['stage'])
-        with col2:
-            st.metric("Prioritization Track", card.get('prioritization_track', 'N/A'))
-        with col3:
-            st.metric("Last Contact", card['last_contact'])
-        
-        # Location & Contact
-        st.subheader("🏢 Location & Contact")
-        loc_cols = st.columns(3)
-        with loc_cols[0]:
-            st.write(f"**City:** {card.get('city', 'N/A')}")
-        with loc_cols[1]:
-            st.write(f"**State:** {card.get('state', 'N/A')}")
-        with loc_cols[2]:
-            st.write(f"**Phone:** {card.get('phone', 'N/A')}")
-        
-        if card.get('street_address'):
-            st.write(f"**Address:** {card['street_address']}")
-        if card.get('website'):
-            st.write(f"**Website:** {card['website']}")
-        
-        # Strategy
-        st.subheader("📊 Strategy")
-        strat_cols = st.columns(2)
-        with strat_cols[0]:
-            st.write(f"**Track:** {card.get('prioritization_track', 'N/A')}")
-        with strat_cols[1]:
-            st.write(f"**Contract:** {card.get('contract_structure', 'N/A')}")
+        # Strategy section
+        with st.expander("📊 Strategy", expanded=True):
+            strat_cols = st.columns(2)
+            with strat_cols[0]:
+                st.write(f"**Prioritization Track:** {card.get('prioritization_track', 'N/A')}")
+            with strat_cols[1]:
+                st.write(f"**Contract Structure:** {card.get('contract_structure', 'N/A')}")
         
         # Executives
-        st.subheader("👥 Executive Contacts")
-        
-        for i, (prefix, name_key, email_key, leverage_key) in enumerate([
-            ("Executive 1 (ED)", "exec1_name", "exec1_email", "exec1_leverage"),
-            ("Executive 2", "exec2_name", "exec2_email", "exec2_leverage"),
-            ("Executive 3", "exec3_name", "exec3_email", "exec3_leverage"),
-        ]):
-            if card.get(name_key):
-                with st.expander(f"{prefix}: {card.get(name_key, 'N/A')}"):
-                    st.write(f"📧 {card.get(email_key, 'N/A')}")
-                    leverage = card.get(leverage_key, "")
-                    if leverage:
-                        if word_count(leverage) > 15:
+        with st.expander("👥 Executive Contacts", expanded=True):
+            for i, (prefix, name_key, email_key, leverage_key) in enumerate([
+                ("Executive 1 (ED)", "exec1_name", "exec1_email", "exec1_leverage"),
+                ("Executive 2", "exec2_name", "exec2_email", "exec2_leverage"),
+                ("Executive 3", "exec3_name", "exec3_email", "exec3_leverage"),
+            ]):
+                if card.get(name_key):
+                    with st.expander(f"{prefix}: {card.get(name_key, 'N/A')}", expanded=(i==0)):
+                        st.write(f"📧 {card.get(email_key, 'N/A')}")
+                        leverage = card.get(leverage_key, "")
+                        if leverage:
                             st.write("**Profile & Leverage Angle:**")
                             st.write(leverage)
-                        else:
-                            st.write(f"**Leverage:** {leverage}")
         
         # Foundation
         if card.get('foundation_name'):
-            st.subheader("🏛️ Foundation")
-            with st.expander(f"Foundation: {card.get('foundation_name')}"):
+            with st.expander("🏛️ Foundation"):
+                st.write(f"**Foundation:** {card.get('foundation_name', 'N/A')}")
                 st.write(f"**Leader:** {card.get('foundation_leader', 'N/A')}")
                 st.write(f"📧 {card.get('foundation_email', 'N/A')}")
                 
                 foundation_leverage = card.get('foundation_leverage', "")
                 if foundation_leverage:
-                    if word_count(foundation_leverage) > 15:
-                        st.write("**Strategic Leverage Angle:**")
-                        st.write(foundation_leverage)
-                    else:
-                        st.write(f"**Leverage:** {foundation_leverage}")
+                    st.write("**Strategic Leverage Angle:**")
+                    st.write(foundation_leverage)
         
         # Next Step
-        if card.get('next_step'):
+        st.markdown("---")
+        st.subheader("📝 Update Next Step")
             st.subheader("📋 Next Step")
             st.write(card['next_step'])
         
@@ -397,15 +412,6 @@ with st.expander("➕ Add New Card Manually"):
             st.rerun()
         else:
             st.error("Community Name and Executive 1 Name are required")
-
-st.markdown("---")
-st.subheader("Pipeline")
-
-cols = st.columns(6)
-for col, stage_name in zip(cols, st.session_state.data.keys()):
-    with col:
-        card_count = len(st.session_state.data[stage_name])
-        st.metric(stage_name, card_count)
 
 # Track priority for sorting (higher number = higher priority = appears first)
 track_priority = {
