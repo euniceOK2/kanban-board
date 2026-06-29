@@ -484,32 +484,53 @@ for col, stage in zip(columns, st.session_state.data.keys()):
             text_color, is_bold = get_border_color(card['last_contact'])
             bold_style = "font-weight: bold;" if is_bold else ""
             
-            # Custom card with styled last contact date
+            # Build button HTML
+            stages_list = list(st.session_state.data.keys())
+            idx = stages_list.index(stage)
+            
+            button_html = '<div style="display: flex; gap: 6px; justify-content: center; margin-top: 10px;">'
+            
+            # Left arrow
+            if idx > 0:
+                button_html += f'<button onclick="alert(\'Use the arrow buttons\')" style="background: #444; border: 1px solid #666; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer;">←</button>'
+            
+            # Up arrow
+            if display_idx > 0:
+                button_html += f'<button onclick="alert(\'Use the arrow buttons\')" style="background: #444; border: 1px solid #666; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer;">⬆️</button>'
+            
+            # View button
+            button_html += f'<button onclick="alert(\'Click view\')" style="background: #444; border: 1px solid #666; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer;">📋</button>'
+            
+            # Delete button
+            button_html += f'<button onclick="alert(\'Click delete\')" style="background: #444; border: 1px solid #666; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer;">🗑️</button>'
+            
+            # Down arrow
+            if display_idx < len(sorted_cards) - 1:
+                button_html += f'<button onclick="alert(\'Use the arrow buttons\')" style="background: #444; border: 1px solid #666; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer;">⬇️</button>'
+            
+            # Right arrow
+            if idx < 5:
+                button_html += f'<button onclick="alert(\'Use the arrow buttons\')" style="background: #444; border: 1px solid #666; color: white; padding: 6px 10px; border-radius: 4px; cursor: pointer;">→</button>'
+            
+            button_html += '</div>'
+            
+            # Custom card with all content inside
             card_html = f"""
             <div style="border: 2px solid #444; border-radius: 8px; padding: 15px; margin-bottom: 12px;">
                 <div style="color: white; font-weight: bold; margin-bottom: 8px;">{card['community_name']}</div>
                 <div style="color: {text_color}; font-size: 12px; margin-bottom: 6px; {bold_style}">Last Contact: {card['last_contact']}</div>
+                <div style="color: #fbbf24; font-size: 12px; margin-bottom: 10px;">Track: {card.get('prioritization_track', 'N/A')}</div>
+                {button_html}
             </div>
             """
             st.markdown(card_html, unsafe_allow_html=True)
             
-            # Card content and buttons
-            # First 5 words of next step
-            next_step_preview = get_first_n_words(card.get('next_step', ''), 5)
-            if next_step_preview:
-                st.caption(f"📋 {next_step_preview}")
+            # Actual working buttons (invisible, below card)
+            st.markdown('<div style="display: none;">', unsafe_allow_html=True)
             
-            # Prioritization Track instead of tier
-            if card.get('prioritization_track'):
-                st.caption(f"Track: {card['prioritization_track']}")
-            
-            # All action buttons on one row
-            st.markdown("---")
             button_cols = st.columns([0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
             
             with button_cols[0]:
-                stages_list = list(st.session_state.data.keys())
-                idx = stages_list.index(stage)
                 if idx > 0:
                     if st.button("←", key=f"prev_{card['id']}", help="Previous stage", use_container_width=True):
                         move_card(card["id"], stage, stages_list[idx - 1])
@@ -538,11 +559,11 @@ for col, stage in zip(columns, st.session_state.data.keys()):
                         st.rerun()
             
             with button_cols[5]:
-                stages_list = list(st.session_state.data.keys())
-                idx = stages_list.index(stage)
                 if idx < 5:
                     if st.button("→", key=f"next_{card['id']}", help="Next stage", use_container_width=True):
                         move_card(card["id"], stage, stages_list[idx + 1])
                         st.rerun()
+            
+            st.markdown('</div>', unsafe_allow_html=True)
 
 st.caption(f"Total cards: {sum(len(c) for c in st.session_state.data.values())}")
