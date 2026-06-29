@@ -193,11 +193,6 @@ if st.session_state.selected_card_id is not None:
         # Next Step
         st.markdown("---")
         st.subheader("📝 Update Next Step")
-            st.subheader("📋 Next Step")
-            st.write(card['next_step'])
-        
-        # Edit Next Step
-        st.subheader("✏️ Update Next Step")
         new_next_step = st.text_area("Next Step Notes", value=card.get('next_step', ''), key="edit_next_step")
         if st.button("Save Next Step", key="save_next_step"):
             stage_name, _, _ = find_card(st.session_state.selected_card_id)
