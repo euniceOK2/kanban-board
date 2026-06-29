@@ -10,9 +10,14 @@ DATA_FILE = "kanban_data.json"
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
-            return json.load(f)
+            data = json.load(f)
+            # Migrate old stage names to new ones
+            if "Tier 1 Discovery" in data:
+                data["Discovery"] = data.pop("Tier 1 Discovery", [])
+                save_data(data)  # Save the migrated data
+            return data
     return {
-        "Tier 1 Discovery": [],
+        "Discovery": [],
         "First Call Scheduled": [],
         "Pilot Discussion": [],
         "Pilot Agreement": [],
@@ -91,7 +96,7 @@ def add_card(**kwargs):
         "last_contact": datetime.now().strftime("%Y-%m-%d"),
     }
     new_card.update(kwargs)
-    st.session_state.data[kwargs.get("stage", "Tier 1 Discovery")].append(new_card)
+    st.session_state.data[kwargs.get("stage", "Discovery")].append(new_card)
     save_data(st.session_state.data)
 
 # ============================================================================
@@ -207,11 +212,11 @@ if uploaded_file is not None:
         stream = StringIO(uploaded_file.getvalue().decode("utf8"), newline=None)
         csv_data = csv.DictReader(stream)
         
-        valid_stages = ["Tier 1 Discovery", "First Call Scheduled", "Pilot Discussion", "Pilot Agreement", "Deployment", "Results"]
+        valid_stages = ["Discovery", "First Call Scheduled", "Pilot Discussion", "Pilot Agreement", "Deployment", "Results"]
         
         stage_mapping = {
-            "Discovery": "Tier 1 Discovery",
-            "Tier 1 Discovery": "Tier 1 Discovery",
+            "Discovery": "Discovery",
+            "Tier 1 Discovery": "Discovery",
             "First Call": "First Call Scheduled",
             "First Call Scheduled": "First Call Scheduled",
             "Pilot Discussion": "Pilot Discussion",
@@ -403,7 +408,7 @@ def get_track_priority(card):
 
 # Stage styling - unique colors for each column
 stage_styles = {
-    "Tier 1 Discovery": {"bg": "#0d47a1", "emoji": "🔍", "accent": "#1976d2"},
+    "Discovery": {"bg": "#0d47a1", "emoji": "🔍", "accent": "#1976d2"},
     "First Call Scheduled": {"bg": "#e65100", "emoji": "📞", "accent": "#ff6f00"},
     "Pilot Discussion": {"bg": "#1b5e20", "emoji": "💬", "accent": "#2e7d32"},
     "Pilot Agreement": {"bg": "#880e4f", "emoji": "📋", "accent": "#c2185b"},
