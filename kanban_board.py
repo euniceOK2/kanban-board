@@ -399,12 +399,17 @@ with st.expander("➕ Add New Card Manually"):
             st.error("Community Name and Executive 1 Name are required")
 
 st.markdown("---")
-st.subheader("Pipeline")
+st.subheader("📊 Pipeline Overview")
 
 cols = st.columns(6)
 for col, stage_name in zip(cols, st.session_state.data.keys()):
     with col:
-        st.metric(stage_name, len(st.session_state.data[stage_name]))
+        stage_style = stage_styles.get(stage_name, {})
+        emoji = stage_style.get("emoji", "")
+        card_count = len(st.session_state.data[stage_name])
+        
+        # Display count with stage emoji
+        col.metric(f"{emoji} {stage_name}", card_count)
 
 # Track priority for sorting (higher number = higher priority = appears first)
 track_priority = {
@@ -477,27 +482,27 @@ for col, stage in zip(columns, st.session_state.data.keys()):
                 if card.get('prioritization_track'):
                     st.caption(f"Track: {card['prioritization_track']}")
                 
-                # Action buttons - HIDDEN but functional
-                st.markdown('<div style="display: none;">', unsafe_allow_html=True)
+                # Action buttons - VISIBLE
                 st.markdown("---")
-                button_cols = st.columns(5)
+                button_cols = st.columns([0.5, 1, 1, 1, 0.5])
                 
                 with button_cols[0]:
-                    if st.button("📋", key=f"view_{card['id']}", help="View details", use_container_width=True):
+                    stages_list = list(st.session_state.data.keys())
+                    idx = stages_list.index(stage)
+                    if idx > 0:
+                        if st.button("←", key=f"prev_{card['id']}", help="Previous stage", use_container_width=True):
+                            move_card(card["id"], stage, stages_list[idx - 1])
+                            st.rerun()
+                
+                with button_cols[1]:
+                    if st.button("📋 View", key=f"view_{card['id']}", help="View details", use_container_width=True):
                         st.session_state.selected_card_id = card['id']
                         st.rerun()
                 
-                with button_cols[1]:
-                    if display_idx > 0:
-                        if st.button("⬆️", key=f"up_{card['id']}", help="Move up", use_container_width=True):
-                            move_card_within_stage(card["id"], stage, "up")
-                            st.rerun()
-                
                 with button_cols[2]:
-                    if display_idx < len(sorted_cards) - 1:
-                        if st.button("⬇️", key=f"down_{card['id']}", help="Move down", use_container_width=True):
-                            move_card_within_stage(card["id"], stage, "down")
-                            st.rerun()
+                    if st.button("🗑️ Delete", key=f"del_{card['id']}", help="Delete", use_container_width=True):
+                        delete_card(card["id"])
+                        st.rerun()
                 
                 with button_cols[3]:
                     stages_list = list(st.session_state.data.keys())
@@ -507,10 +512,20 @@ for col, stage in zip(columns, st.session_state.data.keys()):
                             move_card(card["id"], stage, stages_list[idx + 1])
                             st.rerun()
                 
-                with button_cols[4]:
-                    if st.button("🗑️", key=f"del_{card['id']}", help="Delete", use_container_width=True):
-                        delete_card(card["id"])
-                        st.rerun()
-                st.markdown('</div>', unsafe_allow_html=True)
+                # Up/Down buttons row
+                st.markdown("")
+                up_down_cols = st.columns([1, 1, 1])
+                
+                with up_down_cols[0]:
+                    if display_idx > 0:
+                        if st.button("⬆️ Up", key=f"up_{card['id']}", help="Move up", use_container_width=True):
+                            move_card_within_stage(card["id"], stage, "up")
+                            st.rerun()
+                
+                with up_down_cols[2]:
+                    if display_idx < len(sorted_cards) - 1:
+                        if st.button("⬇️ Down", key=f"down_{card['id']}", help="Move down", use_container_width=True):
+                            move_card_within_stage(card["id"], stage, "down")
+                            st.rerun()
 
 st.caption(f"Total cards: {sum(len(c) for c in st.session_state.data.values())}")
