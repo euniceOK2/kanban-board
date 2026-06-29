@@ -124,7 +124,7 @@ def delete_card(card_id):
         save_data(st.session_state.data)
         st.session_state.data = load_data()
 
-def add_card(**kwargs):
+def add_card(skip_reload=False, **kwargs):
     new_card = {
         "id": get_next_id(st.session_state.data),
         "last_contact": "Did not reach out yet",
@@ -132,7 +132,8 @@ def add_card(**kwargs):
     new_card.update(kwargs)
     st.session_state.data[kwargs.get("stage", "Discovery")].append(new_card)
     save_data(st.session_state.data)
-    st.session_state.data = load_data()
+    if not skip_reload:
+        st.session_state.data = load_data()
 
 # ============================================================================
 # MODAL DISPLAY (at top, before cards)
@@ -341,13 +342,16 @@ if uploaded_file is not None:
                     "next_step": ""
                 }
                 
-                add_card(**card_data)
+                # Skip reload during batch import - reload once after all cards added
+                add_card(skip_reload=True, **card_data)
                 cards_added += 1
                 
             except Exception as e:
                 errors.append(f"Row {row_num}: {str(e)}")
         
+        # Reload once after all cards are added
         if cards_added > 0:
+            st.session_state.data = load_data()
             st.success(f"✅ {cards_added} cards imported!")
             st.rerun()
         if errors:
